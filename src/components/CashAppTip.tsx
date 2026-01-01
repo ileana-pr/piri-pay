@@ -19,8 +19,6 @@ export default function CashAppTip({ method, onBack }: CashAppTipProps) {
         return 'from-sky-400 to-blue-500';
       case 'zelle':
         return 'from-violet-500 to-purple-600';
-      case 'paypal':
-        return 'from-blue-600 to-sky-500';
       default:
         return 'from-gray-500 to-slate-600';
     }
@@ -39,8 +37,6 @@ export default function CashAppTip({ method, onBack }: CashAppTipProps) {
         return `https://venmo.com/${handle}${amt ? `?txn=pay&amount=${amt}` : ''}`;
       case 'zelle':
         return null;
-      case 'paypal':
-        return `https://paypal.me/${handle}${amt ? `/${amt}` : ''}`;
       default:
         return null;
     }

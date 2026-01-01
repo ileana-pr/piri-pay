@@ -1,13 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { PaymentMethod, getEnabledMethods } from '../config/paymentConfig';
 import { Wallet, DollarSign, QrCode } from 'lucide-react';
-import CryptoTip from './CryptoTip';
+import UniversalCryptoTip from './UniversalCryptoTip';
 import CashAppTip from './CashAppTip';
 import QRCode from 'qrcode';
+
 
 export default function TipPage() {
   const paymentMethods = getEnabledMethods();
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null);
+  const [showUniversalCrypto, setShowUniversalCrypto] = useState(false);
   const [showQR, setShowQR] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState('');
 
@@ -32,6 +34,9 @@ export default function TipPage() {
     generateQR();
   }, []);
 
+  // get fiat methods only
+  const fiatMethods = paymentMethods.filter(m => m.type !== 'crypto');
+
   const getMethodIcon = (type: string) => {
     switch (type) {
       case 'crypto':
@@ -41,27 +46,13 @@ export default function TipPage() {
     }
   };
 
-  const getMethodColor = (type: string) => {
-    switch (type) {
-      case 'crypto':
-        return 'from-blue-500 to-cyan-500';
-      case 'cashapp':
-        return 'from-green-500 to-emerald-500';
-      case 'venmo':
-        return 'from-sky-400 to-blue-500';
-      case 'zelle':
-        return 'from-violet-500 to-purple-500';
-      case 'paypal':
-        return 'from-blue-600 to-sky-500';
-      default:
-        return 'from-gray-500 to-slate-500';
-    }
-  };
+
+  if (showUniversalCrypto) {
+    return <UniversalCryptoTip onBack={() => setShowUniversalCrypto(false)} />;
+  }
 
   if (selectedMethod) {
-    return selectedMethod.type === 'crypto' ? (
-      <CryptoTip method={selectedMethod} onBack={() => setSelectedMethod(null)} />
-    ) : (
+    return (
       <CashAppTip method={selectedMethod} onBack={() => setSelectedMethod(null)} />
     );
   }
@@ -105,38 +96,60 @@ export default function TipPage() {
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {paymentMethods.map((method) => (
-            <button
-              key={method.id}
-              onClick={() => setSelectedMethod(method)}
-              className="group relative overflow-hidden rounded-2xl bg-gradient-to-br p-[2px] hover:scale-105 transition-all duration-300 hover:shadow-2xl hover:shadow-purple-500/50"
-              style={{
-                background: `linear-gradient(135deg, ${
-                  method.type === 'crypto'
-                    ? '#3b82f6, #06b6d4'
-                    : method.type === 'cashapp'
-                    ? '#10b981, #059669'
-                    : method.type === 'venmo'
-                    ? '#0ea5e9, #3b82f6'
-                    : method.type === 'zelle'
-                    ? '#8b5cf6, #a855f7'
-                    : '#2563eb, #0ea5e9'
-                })`,
-              }}
-            >
-              <div className="bg-slate-900 rounded-2xl p-8 h-full flex flex-col items-center justify-center space-y-4">
-                <div className="text-white">
-                  {getMethodIcon(method.type)}
-                </div>
-                <h3 className="text-2xl font-bold">
-                  {method.name}
-                </h3>
-                <p className="text-gray-400 text-sm">Tap to continue</p>
+        {/* universal crypto payment */}
+        <div className="mb-6">
+          <button
+            onClick={() => setShowUniversalCrypto(true)}
+            className="group relative overflow-hidden rounded-2xl bg-gradient-to-br p-[2px] hover:scale-105 transition-all duration-300 hover:shadow-2xl hover:shadow-purple-500/50 w-full"
+            style={{
+              background: 'linear-gradient(135deg, #3b82f6, #06b6d4)',
+            }}
+          >
+            <div className="bg-slate-900 rounded-2xl p-8 h-full flex flex-col items-center justify-center space-y-4">
+              <div className="text-white">
+                <Wallet className="w-8 h-8" />
               </div>
-            </button>
-          ))}
+              <h3 className="text-2xl font-bold">Crypto (Any Token)</h3>
+              <p className="text-gray-400 text-sm text-center">Pay with any token on Ethereum, Polygon, Solana, or Bitcoin</p>
+            </div>
+          </button>
         </div>
+
+        {/* fiat payment methods */}
+        {fiatMethods.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {fiatMethods.map((method) => (
+              <button
+                key={method.id}
+                onClick={() => setSelectedMethod(method)}
+                className="group relative overflow-hidden rounded-2xl bg-gradient-to-br p-[2px] hover:scale-105 transition-all duration-300 hover:shadow-2xl hover:shadow-purple-500/50"
+                style={{
+                  background: `linear-gradient(135deg, ${
+                    method.type === 'crypto'
+                      ? '#3b82f6, #06b6d4'
+                      : method.type === 'cashapp'
+                      ? '#10b981, #059669'
+                      : method.type === 'venmo'
+                      ? '#0ea5e9, #3b82f6'
+                      : method.type === 'zelle'
+                      ? '#8b5cf6, #a855f7'
+                      : '#2563eb, #0ea5e9'
+                  })`,
+                }}
+              >
+                <div className="bg-slate-900 rounded-2xl p-8 h-full flex flex-col items-center justify-center space-y-4">
+                  <div className="text-white">
+                    {getMethodIcon(method.type)}
+                  </div>
+                  <h3 className="text-2xl font-bold">
+                    {method.name}
+                  </h3>
+                  <p className="text-gray-400 text-sm">Tap to continue</p>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
