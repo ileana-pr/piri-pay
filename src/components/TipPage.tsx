@@ -1,17 +1,30 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { PaymentMethod, getEnabledMethods } from '../config/paymentConfig';
 import { Wallet, DollarSign, QrCode } from 'lucide-react';
-import UniversalCryptoTip from './UniversalCryptoTip';
-import CashAppTip from './CashAppTip';
+import CryptoSelector from './CryptoSelector';
+import EthereumTip from './EthereumTip';
+import SolanaTip from './SolanaTip';
+import BitcoinTip from './BitcoinTip';
+import FiatTip from './FiatTip';
 import QRCode from 'qrcode';
+
+type Blockchain = 'ethereum' | 'solana' | 'bitcoin';
 
 
 export default function TipPage() {
   const paymentMethods = getEnabledMethods();
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null);
-  const [showUniversalCrypto, setShowUniversalCrypto] = useState(false);
+  const [showCrypto, setShowCrypto] = useState(false);
+  const [selectedBlockchain, setSelectedBlockchain] = useState<Blockchain | null>(null);
   const [showQR, setShowQR] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState('');
+
+  // Get receiving addresses from env
+  const receivingAddresses = useMemo(() => ({
+    ethereum: import.meta.env.VITE_ETH_ADDRESS || '',
+    solana: import.meta.env.VITE_SOL_ADDRESS || '',
+    bitcoin: import.meta.env.VITE_BTC_ADDRESS || '',
+  }), []);
 
   useEffect(() => {
     const generateQR = async () => {
@@ -47,13 +60,50 @@ export default function TipPage() {
   };
 
 
-  if (showUniversalCrypto) {
-    return <UniversalCryptoTip onBack={() => setShowUniversalCrypto(false)} />;
+  // Show blockchain selector
+  if (showCrypto && !selectedBlockchain) {
+    return (
+      <CryptoSelector
+        onSelect={(blockchain) => setSelectedBlockchain(blockchain)}
+        onBack={() => setShowCrypto(false)}
+      />
+    );
   }
 
+  // Show Ethereum tip component
+  if (selectedBlockchain === 'ethereum') {
+    return (
+      <EthereumTip
+        onBack={() => setSelectedBlockchain(null)}
+        receivingAddress={receivingAddresses.ethereum}
+      />
+    );
+  }
+
+  // Show Solana tip component
+  if (selectedBlockchain === 'solana') {
+    return (
+      <SolanaTip
+        onBack={() => setSelectedBlockchain(null)}
+        receivingAddress={receivingAddresses.solana}
+      />
+    );
+  }
+
+  // Show Bitcoin tip component
+  if (selectedBlockchain === 'bitcoin') {
+    return (
+      <BitcoinTip
+        onBack={() => setSelectedBlockchain(null)}
+        receivingAddress={receivingAddresses.bitcoin}
+      />
+    );
+  }
+
+  // Show fiat payment method
   if (selectedMethod) {
     return (
-      <CashAppTip method={selectedMethod} onBack={() => setSelectedMethod(null)} />
+      <FiatTip method={selectedMethod} onBack={() => setSelectedMethod(null)} />
     );
   }
 
@@ -96,29 +146,27 @@ export default function TipPage() {
           )}
         </div>
 
-        {/* universal crypto payment */}
-        <div className="mb-6">
+        {/* all payment methods in uniform grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* crypto payment */}
           <button
-            onClick={() => setShowUniversalCrypto(true)}
-            className="group relative overflow-hidden rounded-2xl bg-gradient-to-br p-[2px] hover:scale-105 transition-all duration-300 hover:shadow-2xl hover:shadow-purple-500/50 w-full"
+            onClick={() => setShowCrypto(true)}
+            className="group relative overflow-hidden rounded-2xl bg-gradient-to-br p-[2px] hover:scale-105 transition-all duration-300 hover:shadow-2xl hover:shadow-purple-500/50"
             style={{
               background: 'linear-gradient(135deg, #3b82f6, #06b6d4)',
             }}
           >
-            <div className="bg-slate-900 rounded-2xl p-8 h-full flex flex-col items-center justify-center space-y-4">
+            <div className="bg-slate-900 rounded-2xl p-8 h-full flex flex-col items-center justify-center space-y-4 min-h-[200px]">
               <div className="text-white">
                 <Wallet className="w-8 h-8" />
               </div>
               <h3 className="text-2xl font-bold">Crypto (Any Token)</h3>
-              <p className="text-gray-400 text-sm text-center">Pay with any token on Ethereum, Polygon, Solana, or Bitcoin</p>
+              <p className="text-gray-400 text-sm text-center">Pay with any token on Ethereum, Solana, or Bitcoin</p>
             </div>
           </button>
-        </div>
 
-        {/* fiat payment methods */}
-        {fiatMethods.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {fiatMethods.map((method) => (
+          {/* fiat payment methods */}
+          {fiatMethods.map((method) => (
               <button
                 key={method.id}
                 onClick={() => setSelectedMethod(method)}
@@ -137,7 +185,7 @@ export default function TipPage() {
                   })`,
                 }}
               >
-                <div className="bg-slate-900 rounded-2xl p-8 h-full flex flex-col items-center justify-center space-y-4">
+                <div className="bg-slate-900 rounded-2xl p-8 h-full flex flex-col items-center justify-center space-y-4 min-h-[200px]">
                   <div className="text-white">
                     {getMethodIcon(method.type)}
                   </div>
@@ -148,8 +196,7 @@ export default function TipPage() {
                 </div>
               </button>
             ))}
-          </div>
-        )}
+        </div>
       </div>
     </div>
   );

@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { PaymentMethod } from '../config/paymentConfig';
 import { ArrowLeft, Copy, CheckCircle2, ExternalLink } from 'lucide-react';
 
-interface CashAppTipProps {
+interface FiatTipProps {
   method: PaymentMethod;
   onBack: () => void;
 }
 
-export default function CashAppTip({ method, onBack }: CashAppTipProps) {
+export default function FiatTip({ method, onBack }: FiatTipProps) {
   const [copied, setCopied] = useState(false);
   const [amount, setAmount] = useState('');
 
@@ -19,7 +19,7 @@ export default function CashAppTip({ method, onBack }: CashAppTipProps) {
         return 'from-sky-400 to-blue-500';
       case 'zelle':
         return 'from-violet-500 to-purple-600';
-      default:
+       default:
         return 'from-gray-500 to-slate-600';
     }
   };
@@ -190,3 +190,4 @@ export default function CashAppTip({ method, onBack }: CashAppTipProps) {
     </div>
   );
 }
+
