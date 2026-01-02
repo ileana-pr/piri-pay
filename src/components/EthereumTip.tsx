@@ -544,33 +544,85 @@ export default function EthereumTip({ onBack, receivingAddress }: EthereumTipPro
 
               {/* Wallet selector */}
               {showWalletSelector && !isEthConnected && (
-                <div className="space-y-4 p-6 bg-slate-900/50 rounded-xl border border-slate-700/50">
-                  <p className="text-center text-gray-300 mb-4">Select a wallet to continue</p>
+                <div className="space-y-4 p-6 bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-2xl border-2 border-cyan-500/30 shadow-2xl backdrop-blur-sm">
+                  <div className="text-center mb-6">
+                    <div className="text-4xl mb-2">👛</div>
+                    <p className="text-lg font-bold text-white mb-1">Connect Your Wallet</p>
+                    <p className="text-sm text-gray-400">Choose your favorite wallet to get started!</p>
+                  </div>
                   {connectors.length > 0 ? (
-                    <>
-                      {connectors.map((connector) => (
-                        <button
-                          key={connector.uid}
-                          onClick={() => handleConnectWallet(connector)}
-                          className={`w-full py-4 px-6 rounded-xl font-semibold transition-all duration-300 ${
-                            connector.ready
-                              ? 'bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 hover:scale-105'
-                              : 'bg-slate-700/50 hover:bg-slate-700 text-gray-300'
-                          }`}
-                        >
-                          {connector.name}
-                          {!connector.ready && ' (May need installation)'}
-                        </button>
-                      ))}
-                    </>
+                    <div className="space-y-3">
+                      {(() => {
+                        // Deduplicate connectors - combine all MetaMask/injected connectors into one
+                        const seenWallets = new Set<string>();
+                        const uniqueConnectors = connectors.filter((connector) => {
+                          const connectorName = String(connector.name || '').toLowerCase();
+                          const isMetaMask = connectorName.includes('metamask') || connectorName.includes('injected');
+                          
+                          if (isMetaMask) {
+                            if (seenWallets.has('metamask')) {
+                              return false; // Skip duplicate MetaMask
+                            }
+                            seenWallets.add('metamask');
+                            return true;
+                          }
+                          
+                          const walletKey = connectorName;
+                          if (seenWallets.has(walletKey)) {
+                            return false;
+                          }
+                          seenWallets.add(walletKey);
+                          return true;
+                        });
+                        
+                        return uniqueConnectors.map((connector) => {
+                          const connectorName = String(connector.name || '');
+                          const isMetaMask = connectorName.toLowerCase().includes('metamask') || connectorName.toLowerCase().includes('injected');
+                          const walletIcon = isMetaMask ? '🦊' : connectorName.toLowerCase().includes('walletconnect') ? '🔗' : '💼';
+                          const walletName = isMetaMask ? 'MetaMask' : connectorName;
+                          
+                          return (
+                            <button
+                              key={connector.uid}
+                              onClick={() => handleConnectWallet(connector)}
+                              className={`group w-full py-4 px-6 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center gap-3 ${
+                                connector.ready
+                                  ? 'bg-gradient-to-r from-blue-500 via-cyan-500 to-blue-600 hover:from-blue-600 hover:via-cyan-600 hover:to-blue-700 hover:scale-105 hover:shadow-lg hover:shadow-cyan-500/50 text-white'
+                                  : 'bg-slate-700/50 hover:bg-slate-700 text-gray-400 hover:text-gray-300'
+                              }`}
+                            >
+                              <span className="text-2xl">{walletIcon}</span>
+                              <span>{walletName}</span>
+                              {!connector.ready ? (
+                                <span className="text-xs opacity-75">(Install extension)</span>
+                              ) : (
+                                <span className="text-xs opacity-90">✨ Ready!</span>
+                              )}
+                            </button>
+                          );
+                        });
+                      })()}
+                    </div>
                   ) : (
-                    <p className="text-center text-gray-400 text-sm">No wallets detected. Please install MetaMask.</p>
+                    <div className="text-center py-6">
+                      <div className="text-5xl mb-3">😢</div>
+                      <p className="text-gray-300 mb-2">No wallets found</p>
+                      <p className="text-sm text-gray-400">Install MetaMask to get started!</p>
+                      <a
+                        href="https://metamask.io/download/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-block mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm font-medium transition-colors"
+                      >
+                        Get MetaMask →
+                      </a>
+                    </div>
                   )}
                   <button
                     onClick={() => setShowWalletSelector(false)}
-                    className="w-full py-2 px-4 text-gray-400 hover:text-white text-sm transition-colors"
+                    className="w-full py-2 px-4 text-gray-400 hover:text-white text-sm transition-colors rounded-lg hover:bg-slate-700/50"
                   >
-                    Cancel
+                    Maybe later
                   </button>
                 </div>
               )}

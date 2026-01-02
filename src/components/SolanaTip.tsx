@@ -275,40 +275,75 @@ export default function SolanaTip({ onBack, receivingAddress }: SolanaTipProps) 
 
               {/* Wallet selector */}
               {showWalletSelector && !isSolConnected && (
-                <div className="space-y-4 p-6 bg-slate-900/50 rounded-xl border border-slate-700/50">
-                  <p className="text-center text-gray-300 mb-4">Select a wallet to continue</p>
+                <div className="space-y-4 p-6 bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-2xl border-2 border-purple-500/30 shadow-2xl backdrop-blur-sm">
+                  <div className="text-center mb-6">
+                    <div className="text-4xl mb-2">👛</div>
+                    <p className="text-lg font-bold text-white mb-1">Connect Your Wallet</p>
+                    <p className="text-sm text-gray-400">Choose your favorite Solana wallet!</p>
+                  </div>
                   {wallets.length > 0 ? (
-                    <>
+                    <div className="space-y-3">
                       {wallets.map((wallet) => {
                         const readyState = wallet.adapter.readyState;
                         const canConnect = readyState === 'Installed' || readyState === 'Loadable';
+                        const walletIcon = wallet.adapter.name.toLowerCase().includes('phantom') ? '👻' : 
+                                         wallet.adapter.name.toLowerCase().includes('solflare') ? '🔥' : '💜';
+                        const statusEmoji = canConnect ? '✨' : '⏳';
+                        
                         return (
                           <button
                             key={wallet.adapter.name}
                             onClick={() => handleConnectWallet(wallet.adapter.name)}
-                            className={`w-full py-4 px-6 rounded-xl font-semibold transition-all duration-300 ${
+                            className={`group w-full py-4 px-6 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center gap-3 ${
                               canConnect
-                                ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 hover:scale-105'
-                                : 'bg-slate-700/50 hover:bg-slate-700 text-gray-300'
+                                ? 'bg-gradient-to-r from-purple-500 via-pink-500 to-purple-600 hover:from-purple-600 hover:via-pink-600 hover:to-purple-700 hover:scale-105 hover:shadow-lg hover:shadow-purple-500/50 text-white'
+                                : 'bg-slate-700/50 hover:bg-slate-700 text-gray-400 hover:text-gray-300'
                             }`}
                           >
-                            {wallet.adapter.name}
-                            {!canConnect && ` (${readyState})`}
+                            <span className="text-2xl">{walletIcon}</span>
+                            <span>{wallet.adapter.name}</span>
+                            {canConnect ? (
+                              <span className="text-xs opacity-90">{statusEmoji} Ready!</span>
+                            ) : (
+                              <span className="text-xs opacity-75">({readyState})</span>
+                            )}
                           </button>
                         );
                       })}
-                      <p className="text-xs text-gray-500 text-center mt-2">
-                        Detected {wallets.length} wallet{wallets.length !== 1 ? 's' : ''}
+                      <p className="text-xs text-gray-500 text-center mt-3">
+                        Found {wallets.length} wallet{wallets.length !== 1 ? 's' : ''} 🎉
                       </p>
-                    </>
+                    </div>
                   ) : (
-                    <p className="text-center text-gray-400 text-sm">No wallets detected. Please install Phantom or Solflare extension.</p>
+                    <div className="text-center py-6">
+                      <div className="text-5xl mb-3">😢</div>
+                      <p className="text-gray-300 mb-2">No wallets found</p>
+                      <p className="text-sm text-gray-400 mb-4">Install Phantom or Solflare to get started!</p>
+                      <div className="flex gap-3 justify-center">
+                        <a
+                          href="https://phantom.app/"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg text-sm font-medium transition-colors"
+                        >
+                          Get Phantom 👻
+                        </a>
+                        <a
+                          href="https://solflare.com/"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-4 py-2 bg-pink-600 hover:bg-pink-700 rounded-lg text-sm font-medium transition-colors"
+                        >
+                          Get Solflare 🔥
+                        </a>
+                      </div>
+                    </div>
                   )}
                   <button
                     onClick={() => setShowWalletSelector(false)}
-                    className="w-full py-2 px-4 text-gray-400 hover:text-white text-sm transition-colors"
+                    className="w-full py-2 px-4 text-gray-400 hover:text-white text-sm transition-colors rounded-lg hover:bg-slate-700/50"
                   >
-                    Cancel
+                    Maybe later
                   </button>
                 </div>
               )}
