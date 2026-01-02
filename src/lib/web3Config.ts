@@ -20,7 +20,9 @@ import {
 } from 'wagmi/chains';
 import { injected, walletConnect } from 'wagmi/connectors';
 
-const projectId = 'demo-project-id';
+// WalletConnect requires a project ID from https://cloud.walletconnect.com
+// For testing, you can use a demo ID, but for production get your own
+const projectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || 'demo-project-id';
 
 // NETWORK CONFIGURATION GUIDE:
 // 

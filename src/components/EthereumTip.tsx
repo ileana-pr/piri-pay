@@ -553,10 +553,16 @@ export default function EthereumTip({ onBack, receivingAddress }: EthereumTipPro
                   {connectors.length > 0 ? (
                     <div className="space-y-3">
                       {(() => {
-                        // Deduplicate connectors - combine all MetaMask/injected connectors into one
+                        // Filter out Solana wallets (Phantom, Solflare) and deduplicate
                         const seenWallets = new Set<string>();
                         const uniqueConnectors = connectors.filter((connector) => {
                           const connectorName = String(connector.name || '').toLowerCase();
+                          
+                          // Exclude Solana wallets - they don't work for Ethereum
+                          if (connectorName.includes('phantom') || connectorName.includes('solflare') || connectorName.includes('solana')) {
+                            return false;
+                          }
+                          
                           const isMetaMask = connectorName.includes('metamask') || connectorName.includes('injected');
                           
                           if (isMetaMask) {
@@ -576,10 +582,37 @@ export default function EthereumTip({ onBack, receivingAddress }: EthereumTipPro
                         });
                         
                         return uniqueConnectors.map((connector) => {
-                          const connectorName = String(connector.name || '');
-                          const isMetaMask = connectorName.toLowerCase().includes('metamask') || connectorName.toLowerCase().includes('injected');
-                          const walletIcon = isMetaMask ? '🦊' : connectorName.toLowerCase().includes('walletconnect') ? '🔗' : '💼';
-                          const walletName = isMetaMask ? 'MetaMask' : connectorName;
+                          const connectorName = String(connector.name || '').toLowerCase();
+                          
+                          // Detect wallet type and set appropriate icon/name
+                          let walletIcon = '💼';
+                          let walletName = connectorName;
+                          
+                          if (connectorName.includes('metamask') || connectorName.includes('injected')) {
+                            walletIcon = '🦊';
+                            walletName = 'MetaMask';
+                          } else if (connectorName.includes('walletconnect')) {
+                            walletIcon = '🔗';
+                            walletName = 'WalletConnect';
+                          } else if (connectorName.includes('rainbow')) {
+                            walletIcon = '🌈';
+                            walletName = 'Rainbow';
+                          } else if (connectorName.includes('coinbase')) {
+                            walletIcon = '🔵';
+                            walletName = 'Coinbase Wallet';
+                          } else if (connectorName.includes('uniswap')) {
+                            walletIcon = '🦄';
+                            walletName = 'Uniswap Wallet';
+                          } else if (connectorName.includes('trust')) {
+                            walletIcon = '🛡️';
+                            walletName = 'Trust Wallet';
+                          } else if (connectorName.includes('brave')) {
+                            walletIcon = '🦁';
+                            walletName = 'Brave Wallet';
+                          } else {
+                            // Capitalize first letter for unknown wallets
+                            walletName = connectorName.charAt(0).toUpperCase() + connectorName.slice(1);
+                          }
                           
                           return (
                             <button
@@ -595,6 +628,8 @@ export default function EthereumTip({ onBack, receivingAddress }: EthereumTipPro
                               <span>{walletName}</span>
                               {!connector.ready ? (
                                 <span className="text-xs opacity-75">(Install extension)</span>
+                              ) : connectorName.includes('walletconnect') ? (
+                                <span className="text-xs opacity-90">📱 Scan QR code</span>
                               ) : (
                                 <span className="text-xs opacity-90">✨ Ready!</span>
                               )}
