@@ -22,8 +22,8 @@ export default function EthereumTip({ onBack, receivingAddress }: EthereumTipPro
 
   // Ethereum wallet hooks
   const { address: ethAddress, isConnected: isEthConnected, chain } = useAccount();
-  const { connectors, connect: connectEth, error: connectError, isPending: isConnecting } = useConnect();
-  const { disconnect: disconnectEth } = useDisconnect();
+  const { error: connectError, isPending: isConnecting } = useConnect();
+   const { disconnect: disconnectEth } = useDisconnect();
   // AppKit modal — works on mobile (WalletConnect deep link, "Open in MetaMask") when custom buttons don't
   const { open: openAppKit } = useAppKit();
   
@@ -425,16 +425,6 @@ export default function EthereumTip({ onBack, receivingAddress }: EthereumTipPro
     }
   };
 
-  const handleConnectWallet = (connector: typeof connectors[0]) => {
-    console.log('Connecting wallet:', connector.name, 'Ready:', connector.ready, 'Type:', connector.type);
-    try {
-      connectEth({ connector });
-    } catch (error) {
-      console.error('Error connecting wallet:', error);
-      setError(`Failed to connect wallet: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  };
-
   const quickAmounts = ['0.001', '0.01', '0.1', '1', '10'];
   const tokens = POPULAR_TOKENS.ethereum;
 
@@ -553,8 +543,7 @@ export default function EthereumTip({ onBack, receivingAddress }: EthereumTipPro
                 <div className="space-y-4 p-6 bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-2xl border-2 border-cyan-500/30 shadow-2xl backdrop-blur-sm">
                   <div className="text-center mb-6">
                     <div className="text-4xl mb-2">👛</div>
-                    <p className="text-lg font-bold text-white mb-1">Connect Your Wallet</p>
-                    <p className="text-sm text-gray-400">Works on mobile: MetaMask, WalletConnect, and more</p>
+                    <p className="text-lg font-bold text-white">Connect Your Wallet</p>
                   </div>
                   {/* primary: open AppKit connect modal (mobile-friendly deep links + WalletConnect) */}
                   <button
@@ -564,62 +553,13 @@ export default function EthereumTip({ onBack, receivingAddress }: EthereumTipPro
                     className="w-full py-4 px-6 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center gap-3 bg-gradient-to-r from-blue-500 via-cyan-500 to-blue-600 hover:from-blue-600 hover:via-cyan-600 hover:to-blue-700 hover:scale-105 hover:shadow-lg hover:shadow-cyan-500/50 text-white disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <span className="text-2xl">🔗</span>
-                    <span>MetaMask or WalletConnect</span>
+                    <span>Connect wallet</span>
                     {isConnecting ? (
                       <span className="text-xs opacity-90">⏳ Connecting...</span>
                     ) : (
                       <span className="text-xs opacity-90">📱 Tap to open wallet</span>
                     )}
                   </button>
-                  {/* fallback: direct connector buttons (e.g. desktop with injected wallet) */}
-                  {connectors.length > 0 && (
-                    <>
-                      <div className="relative my-4">
-                        <div className="absolute inset-0 flex items-center">
-                          <div className="w-full border-t border-slate-600" />
-                        </div>
-                        <div className="relative flex justify-center">
-                          <span className="bg-slate-800 px-3 text-xs text-gray-500">or choose wallet</span>
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        {(() => {
-                          const seenWallets = new Set<string>();
-                          const uniqueConnectors = connectors.filter((connector) => {
-                            const connectorName = String(connector.name || '').toLowerCase();
-                            if (connectorName.includes('phantom') || connectorName.includes('solflare') || connectorName.includes('solana')) return false;
-                            const isMetaMask = connectorName.includes('metamask') || connectorName.includes('injected');
-                            if (isMetaMask) {
-                              if (seenWallets.has('metamask')) return false;
-                              seenWallets.add('metamask');
-                              return true;
-                            }
-                            if (seenWallets.has(connectorName)) return false;
-                            seenWallets.add(connectorName);
-                            return true;
-                          });
-                          return uniqueConnectors.map((connector) => {
-                            const connectorName = String(connector.name || '').toLowerCase();
-                            const walletName = connectorName.includes('metamask') || connectorName.includes('injected') ? 'MetaMask' : connectorName.includes('walletconnect') ? 'WalletConnect' : connectorName.charAt(0).toUpperCase() + connectorName.slice(1);
-                            let walletIcon = '💼';
-                            if (connectorName.includes('metamask') || connectorName.includes('injected')) walletIcon = '🦊';
-                            else if (connectorName.includes('walletconnect')) walletIcon = '🔗';
-                            return (
-                              <button
-                                key={connector.uid}
-                                onClick={() => handleConnectWallet(connector)}
-                                disabled={isConnecting || !connector.ready}
-                                className="w-full py-3 px-4 rounded-lg font-medium transition-all flex items-center justify-center gap-2 bg-slate-700/50 hover:bg-slate-700 text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                              >
-                                <span className="text-xl">{walletIcon}</span>
-                                <span>{walletName}</span>
-                              </button>
-                            );
-                          });
-                        })()}
-                      </div>
-                    </>
-                  )}
                   <button
                     onClick={() => setShowWalletSelector(false)}
                     className="w-full py-2 px-4 text-gray-400 hover:text-white text-sm transition-colors rounded-lg hover:bg-slate-700/50"
