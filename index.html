@@ -11,6 +11,17 @@
   </head>
   <body>
     <div id="root"></div>
+    <!-- optional: ?debug=1 in URL shows on-device console (no USB needed). e.g. https://fu-payme.vercel.app?debug=1 -->
+    <script>
+      (function () {
+        var params = new URLSearchParams(location.search);
+        if (params.get('debug') !== '1') return;
+        var s = document.createElement('script');
+        s.src = 'https://unpkg.com/vconsole@latest/dist/vconsole.min.js';
+        s.onload = function () { new window.VConsole(); };
+        document.head.appendChild(s);
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

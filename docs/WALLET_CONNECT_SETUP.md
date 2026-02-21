@@ -25,10 +25,9 @@ Same URL can still behave differently on mobile if the browser sends a different
 ### If it works on desktop but not on mobile
 
 1. On your phone, open the app and tap “Connect wallet” so the modal loads.
-2. Use **remote debugging** to see the console:
-   - **iOS**: Safari on Mac → Develop → [your iPhone] → your page.
-   - **Android**: Chrome on desktop → `chrome://inspect` → your device/tab.
-3. In the console, look for `[Explorer API]` — it logs `status`, `origin`, and `isMobile`.
+2. **No USB?** Open the app with `?debug=1` (e.g. `https://fu-payme.vercel.app?debug=1`). A green tab appears at the bottom; tap it to open an on-device console and look for `[Explorer API]`.
+3. Or use **remote debugging** (USB + computer): iOS → Safari Develop menu; Android → Chrome `chrome://inspect`.
+4. In the console, look for `[Explorer API]` — it logs `status`, `origin`, and `isMobile`.
    - **403**: Add that exact `origin` in Reown Dashboard → Project Domains (updates can take ~15 min).
    - **200** but still empty: possible version mismatch or relay/network issue; ensure all `@reown/*` packages share the same version.
 
