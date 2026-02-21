@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAccount, useConnect, useDisconnect, useWaitForTransactionReceipt, useWriteContract, useBalance } from 'wagmi';
 
-import { useAppKit } from '@reown/appkit/react';
+import { useConnectModal } from '@rainbow-me/rainbowkit';
 import { mainnet } from 'wagmi/chains';
 import type { EIP1193Provider } from 'viem';
 import { parseEther, parseUnits, erc20Abi, Address } from 'viem';
@@ -19,14 +19,11 @@ export default function EthereumTip({ onBack, receivingAddress }: EthereumTipPro
   const [showWalletSelector, setShowWalletSelector] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isDirectSending, setIsDirectSending] = useState(false);
-  const [explorerApiStatus, setExplorerApiStatus] = useState<{ status: number; origin: string; walletCount?: number | null } | null>(null);
-
   // Ethereum wallet hooks
   const { address: ethAddress, isConnected: isEthConnected, chain } = useAccount();
   const { error: connectError, isPending: isConnecting } = useConnect();
-   const { disconnect: disconnectEth } = useDisconnect();
-  // AppKit modal — works on mobile (WalletConnect deep link, "Open in MetaMask") when custom buttons don't
-  const { open: openAppKit } = useAppKit();
+  const { disconnect: disconnectEth } = useDisconnect();
+  const { openConnectModal } = useConnectModal();
   
   const expectedChain = mainnet;
   
@@ -35,18 +32,6 @@ export default function EthereumTip({ onBack, receivingAddress }: EthereumTipPro
   const [isSwitchingNetwork, setIsSwitchingNetwork] = useState(false);
   const [lastNetworkSwitchTime, setLastNetworkSwitchTime] = useState<number | null>(null);
   
-  // pick up Explorer API result (payer view often has no console — show status in UI)
-  useEffect(() => {
-    const win = window as Window & { __explorerApiStatus__?: { status: number; origin: string; walletCount?: number | null } };
-    if (win.__explorerApiStatus__) setExplorerApiStatus({ status: win.__explorerApiStatus__.status, origin: win.__explorerApiStatus__.origin, walletCount: win.__explorerApiStatus__.walletCount });
-    const onResult = (e: Event) => {
-      const d = (e as CustomEvent<{ status: number; origin: string; walletCount?: number | null }>).detail;
-      if (d) setExplorerApiStatus({ status: d.status, origin: d.origin, walletCount: d.walletCount });
-    };
-    window.addEventListener('explorerApiResult', onResult);
-    return () => window.removeEventListener('explorerApiResult', onResult);
-  }, []);
-
   // Sync with wagmi's chain.id when it updates
   useEffect(() => {
     if (isEthConnected && chain?.id) {
@@ -551,38 +536,16 @@ export default function EthereumTip({ onBack, receivingAddress }: EthereumTipPro
                 </div>
               )}
 
-              {/* Wallet selector — primary: AppKit modal (works on mobile; deep links + WalletConnect) */}
+              {/* Wallet selector — RainbowKit modal (injected + WalletConnect, list from package not API) */}
               {showWalletSelector && !isEthConnected && (
                 <div className="space-y-4 p-6 bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-2xl border-2 border-cyan-500/30 shadow-2xl backdrop-blur-sm">
                   <div className="text-center mb-6">
                     <div className="text-4xl mb-2">👛</div>
                     <p className="text-lg font-bold text-white">Connect Your Wallet</p>
                   </div>
-                  {/* Explorer API status so we can see why tiles are blank (payer often has no console) */}
-                  {explorerApiStatus?.status === 403 && (
-                    <div className="p-3 rounded-lg bg-amber-500/15 border border-amber-500/40 text-amber-200 text-sm">
-                      <p className="font-medium mb-1">Wallet list couldn’t load (403)</p>
-                      <p className="opacity-90">Site owner: add <code className="bg-black/30 px-1 rounded">{explorerApiStatus.origin}</code> to <a href="https://dashboard.reown.com" target="_blank" rel="noreferrer" className="underline">Reown Dashboard</a> → Project Domains.</p>
-                    </div>
-                  )}
-                  {explorerApiStatus?.status === 0 && (
-                    <div className="p-3 rounded-lg bg-slate-600/30 border border-slate-500/40 text-slate-200 text-sm">
-                      <p className="font-medium mb-1">Wallet list request failed</p>
-                      <p className="opacity-90">Network or CORS issue. Try again or open this link in your browser’s address bar.</p>
-                    </div>
-                  )}
-                  {explorerApiStatus?.status === 200 && (
-                    <div className="p-3 rounded-lg bg-slate-700/40 border border-slate-500/30 text-slate-300 text-sm space-y-2">
-                      <p className="font-medium mb-1">Explorer API: OK ({explorerApiStatus.walletCount ?? '?'} wallets)</p>
-                      <p className="opacity-90">Seeing &quot;failed to fetch remote project configuration&quot;? Add this <strong>exact</strong> origin in Reown Dashboard → Project Domains:</p>
-                      <p className="font-mono text-xs bg-black/40 px-2 py-1.5 rounded break-all" title="Copy and add to allowlist">{explorerApiStatus.origin}</p>
-                      <p className="opacity-90 text-xs">Also try adding <code className="bg-black/30 px-1 rounded">{explorerApiStatus.origin}/</code> (with trailing slash). If both are allowlisted and it still fails, contact Reown support (Discord/docs).</p>
-                    </div>
-                  )}
-                  {/* primary: open AppKit connect modal (mobile-friendly deep links + WalletConnect) */}
                   <button
                     type="button"
-                    onClick={() => openAppKit({ view: 'Connect', namespace: 'eip155' })}
+                    onClick={() => openConnectModal?.()}
                     disabled={isConnecting}
                     className="w-full py-4 px-6 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center gap-3 bg-gradient-to-r from-blue-500 via-cyan-500 to-blue-600 hover:from-blue-600 hover:via-cyan-600 hover:to-blue-700 hover:scale-105 hover:shadow-lg hover:shadow-cyan-500/50 text-white disabled:opacity-50 disabled:cursor-not-allowed"
                   >

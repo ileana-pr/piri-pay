@@ -32,6 +32,10 @@ Same URL can still behave differently on mobile if the browser sends a different
    - **200** but you see **"failed to fetch remote project configuration"** or **"failed to fetch usage"**: AppKit calls several Reown APIs (explorer, project config, usage). The explorer can return 200 while project config/usage still reject the request on mobile (same allowlist, different endpoint). **Fix:** In [Reown Dashboard](https://dashboard.reown.com/) → your project → **Project Domains** → Configure Domains, add **both** `https://fu-payme.vercel.app` and `fu-payme.vercel.app` (no scheme). Save and wait ~15 min, then try again on mobile.
    - **200** and no config/usage errors but still empty: version mismatch or relay; ensure all `@reown/*` packages share the same version.
 
+### 403 from wallet list (fetchWallets / fetchWalletsByPage)
+
+If the console shows **Uncaught (in promise) … "HTTP status code: 403"** and the stack mentions `fetchWallets` or `fetchWalletsByPage`, the wallet-list request is being rejected. Our probe can still return 200 if it hits a different endpoint or timing. If your domain is already allowlisted for hours, add `https://fu-payme.vercel.app/` (trailing slash) and contact [Reown support](https://discord.gg/reown) (#developers-forum) with: “403 on fetchWallets/fetchWalletsByPage on mobile; origin allowlisted (fu-payme.vercel.app and https://fu-payme.vercel.app) for hours.” The app uses a small **customWallets** fallback so mobile still shows a few wallets when the API returns 403.
+
 ### Verify it works
 
-After adding domains, refresh the app. The connect modal should show the full WalletConnect wallet list.
+After adding domains, refresh the app. The connect modal should show the full WalletConnect wallet list (or the customWallets fallback if the API still returns 403).

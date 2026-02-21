@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { WagmiProvider } from 'wagmi';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { RainbowKitProvider } from '@rainbow-me/rainbowkit';
+import '@rainbow-me/rainbowkit/styles.css';
 import { config } from './lib/web3Config';
 import { SolanaWalletProvider } from './lib/solanaConfig.tsx';
 import TipPage from './components/TipPage';
@@ -41,9 +43,11 @@ function App() {
       return (
         <WagmiProvider config={config}>
           <QueryClientProvider client={queryClient}>
-            <SolanaWalletProvider>
-              <TipPage profile={profile} />
-            </SolanaWalletProvider>
+            <RainbowKitProvider>
+              <SolanaWalletProvider>
+                <TipPage profile={profile} />
+              </SolanaWalletProvider>
+            </RainbowKitProvider>
           </QueryClientProvider>
         </WagmiProvider>
       );
@@ -65,29 +69,31 @@ function App() {
   return (
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
-        <SolanaWalletProvider>
-          {currentPage === 'home' && (
-            <HomePage
-              onCreateProfile={handleCreateProfile}
-              onViewProfile={handleViewProfile}
-              hasProfile={!!userProfile}
-            />
-          )}
-          {currentPage === 'create' && (
-            <ProfileCreation
-              onSave={handleSaveProfile}
-              onBack={handleBackToHome}
-              initialProfile={userProfile}
-            />
-          )}
-          {currentPage === 'view' && userProfile && (
-            <ProfileView
-              profile={userProfile}
-              onBack={handleBackToHome}
-              onEdit={handleCreateProfile}
-            />
-          )}
-        </SolanaWalletProvider>
+        <RainbowKitProvider>
+          <SolanaWalletProvider>
+            {currentPage === 'home' && (
+              <HomePage
+                onCreateProfile={handleCreateProfile}
+                onViewProfile={handleViewProfile}
+                hasProfile={!!userProfile}
+              />
+            )}
+            {currentPage === 'create' && (
+              <ProfileCreation
+                onSave={handleSaveProfile}
+                onBack={handleBackToHome}
+                initialProfile={userProfile}
+              />
+            )}
+            {currentPage === 'view' && userProfile && (
+              <ProfileView
+                profile={userProfile}
+                onBack={handleBackToHome}
+                onEdit={handleCreateProfile}
+              />
+            )}
+          </SolanaWalletProvider>
+        </RainbowKitProvider>
       </QueryClientProvider>
     </WagmiProvider>
   );
