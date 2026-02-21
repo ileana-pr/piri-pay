@@ -4,7 +4,7 @@ import { SolflareWalletAdapter } from '@solana/wallet-adapter-wallets';
 
 // read endpoint from env, default to devnet for safety
 // set VITE_SOLANA_ENDPOINT in .env file to override
-const endpoint = import.meta.env.VITE_SOLANA_ENDPOINT || 'https://api.devnet.solana.com';
+const endpoint = import.meta.env.VITE_SOLANA_ENDPOINT || 'https://api.mainnet-beta.solana.com';
 
 export function SolanaWalletProvider({ children }: { children: React.ReactNode }) {
   // Phantom is now auto-detected via Standard Wallet API, no need to include it explicitly
@@ -17,7 +17,7 @@ export function SolanaWalletProvider({ children }: { children: React.ReactNode }
 
   return (
     <ConnectionProvider endpoint={endpoint}>
-      <WalletProvider wallets={wallets} autoConnect>
+      <WalletProvider wallets={wallets} autoConnect={false}>
         {children}
       </WalletProvider>
     </ConnectionProvider>

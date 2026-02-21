@@ -23,4 +23,9 @@ export default defineConfig({
     'process.env': {},
   },
   base: '/',
+  server: {
+    host: '0.0.0.0', // allow access from network
+    port: 5173,
+    strictPort: false,
+  },
 });

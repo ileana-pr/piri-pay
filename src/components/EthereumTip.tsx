@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAccount, useConnect, useDisconnect, useWaitForTransactionReceipt, useWriteContract, useBalance } from 'wagmi';
-import { sepolia } from 'wagmi/chains';
+import { mainnet } from 'wagmi/chains';
 import { parseEther, parseUnits, erc20Abi, Address } from 'viem';
 import { ArrowLeft, Wallet, CheckCircle2, Loader2, AlertCircle } from 'lucide-react';
 import { POPULAR_TOKENS, TokenConfig } from '../lib/popularTokens';
@@ -22,7 +22,7 @@ export default function EthereumTip({ onBack, receivingAddress }: EthereumTipPro
   const { connectors, connect: connectEth, error: connectError, isPending: isConnecting } = useConnect();
   const { disconnect: disconnectEth } = useDisconnect();
   
-  const expectedChain = sepolia;
+  const expectedChain = mainnet;
   
   // Get actual chain ID from wallet provider
   const [actualChainId, setActualChainId] = useState<number | null>(null);
@@ -76,8 +76,7 @@ export default function EthereumTip({ onBack, receivingAddress }: EthereumTipPro
   // Format network name for display
   const currentNetwork = useMemo(() => {
     if (actualChainId) {
-      if (actualChainId === 11155111) return 'Sepolia (Testnet)';
-      if (actualChainId === 1) return 'Ethereum (Mainnet)';
+      if (actualChainId === 1) return 'Ethereum';
       return chain?.name || `Chain ${actualChainId}`;
     }
     return null;
@@ -140,9 +139,6 @@ export default function EthereumTip({ onBack, receivingAddress }: EthereumTipPro
     if (!hash) return null;
     const txHash = hash as string;
     
-    if (actualChainId === 11155111) {
-      return `https://sepolia.etherscan.io/tx/${txHash}`;
-    }
     if (actualChainId === 1) {
       return `https://etherscan.io/tx/${txHash}`;
     }
@@ -320,8 +316,7 @@ export default function EthereumTip({ onBack, receivingAddress }: EthereumTipPro
           
           if (metaMaskChainId !== null && metaMaskChainId !== expectedChain.id) {
             const chainNames: Record<number, string> = {
-              11155111: 'Sepolia',
-              1: 'Ethereum Mainnet',
+              1: 'Ethereum',
             };
             const currentNetwork = chainNames[metaMaskChainId] || `Chain ${metaMaskChainId}`;
             setError(`Network mismatch: MetaMask is on ${currentNetwork} (Chain ID: ${metaMaskChainId}), but this app requires ${expectedChain.name} (Chain ID: ${expectedChain.id}). Please switch networks in MetaMask.`);

@@ -1,0 +1,25 @@
+# Development Workflow Rules
+
+## Step-by-Step Development
+- NEVER create multiple files or implement multiple features in a single response
+- Work on ONE small feature or component at a time
+- After each step, STOP and explain what was done before asking to continue
+- Wait for explicit user approval before moving to the next step
+
+## Code Generation Guidelines
+- Generate code for ONE component, ONE function, or ONE small feature per response
+- If a feature requires multiple files, break it down into separate steps
+- Explain what each piece does using analogies when helpful
+- Keep comments minimal and in lowercase
+
+## User Oversight
+- Always pause after completing a single step
+- Explain the changes made and why
+- Ask "Should I continue with [next step]?" before proceeding
+- Allow the user to review, test, and understand each change before moving forward
+
+## Communication
+- Use analogies when explaining concepts
+- Keep explanations clear and educational
+- Don't generate mock code - only real, working implementations
+- Focus on helping the user learn and understand what's being built

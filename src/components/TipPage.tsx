@@ -1,201 +1,191 @@
-import { useState, useEffect, useMemo } from 'react';
-import { PaymentMethod, getEnabledMethods } from '../config/paymentConfig';
-import { Wallet, DollarSign, QrCode } from 'lucide-react';
-import CryptoSelector from './CryptoSelector';
+import { useState } from 'react';
+import { Copy, Check, ArrowLeft, Wallet } from 'lucide-react';
 import EthereumTip from './EthereumTip';
 import SolanaTip from './SolanaTip';
-import BitcoinTip from './BitcoinTip';
-import FiatTip from './FiatTip';
-import QRCode from 'qrcode';
+import { UserProfile } from './ProfileCreation';
 
-type Blockchain = 'ethereum' | 'solana' | 'bitcoin';
+type Chain = 'ethereum' | 'solana';
+type View = 'menu' | 'detail' | 'pay';
 
+interface ChainOption {
+  chain: Chain;
+  address: string;
+  label: string;
+  icon: string;
+  gradient: string;
+  accent: string;
+}
 
-export default function TipPage() {
-  const paymentMethods = getEnabledMethods();
-  const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null);
-  const [showCrypto, setShowCrypto] = useState(false);
-  const [selectedBlockchain, setSelectedBlockchain] = useState<Blockchain | null>(null);
-  const [showQR, setShowQR] = useState(false);
-  const [qrDataUrl, setQrDataUrl] = useState('');
+export default function TipPage({ profile }: { profile: UserProfile }) {
+  const [selectedChain, setSelectedChain] = useState<Chain | null>(null);
+  const [view, setView] = useState<View>('menu');
+  const [copied, setCopied] = useState(false);
 
-  // Get receiving addresses from env
-  const receivingAddresses = useMemo(() => ({
-    ethereum: import.meta.env.VITE_ETH_ADDRESS || '',
-    solana: import.meta.env.VITE_SOL_ADDRESS || '',
-    bitcoin: import.meta.env.VITE_BTC_ADDRESS || '',
-  }), []);
+  // build the list of chains this payee has configured
+  const chains: ChainOption[] = [];
+  if (profile.ethereumAddress) {
+    chains.push({
+      chain: 'ethereum',
+      address: profile.ethereumAddress,
+      label: 'Ethereum',
+      icon: '⟠',
+      gradient: 'from-blue-500 to-cyan-500',
+      accent: 'text-cyan-400',
+    });
+  }
+  if (profile.solanaAddress) {
+    chains.push({
+      chain: 'solana',
+      address: profile.solanaAddress,
+      label: 'Solana',
+      icon: '◎',
+      gradient: 'from-purple-500 to-violet-500',
+      accent: 'text-purple-400',
+    });
+  }
 
-  useEffect(() => {
-    const generateQR = async () => {
-      try {
-        const url = window.location.href;
-        const dataUrl = await QRCode.toDataURL(url, {
-          width: 300,
-          margin: 2,
-          color: {
-            dark: '#000000',
-            light: '#ffffff',
-          },
-        });
-        setQrDataUrl(dataUrl);
-      } catch (error) {
-        console.error('Error generating QR code:', error);
-      }
-    };
+  const selected = chains.find(c => c.chain === selectedChain);
 
-    generateQR();
-  }, []);
+  const copyAddress = (address: string) => {
+    navigator.clipboard.writeText(address);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
-  // get fiat methods only
-  const fiatMethods = paymentMethods.filter(m => m.type !== 'crypto');
+  const handleSelect = (chain: Chain) => {
+    setSelectedChain(chain);
+    setCopied(false);
+    setView('detail');
+  };
 
-  const getMethodIcon = (type: string) => {
-    switch (type) {
-      case 'crypto':
-        return <Wallet className="w-8 h-8" />;
-      default:
-        return <DollarSign className="w-8 h-8" />;
+  const handleBack = () => {
+    if (view === 'pay') {
+      setView('detail');
+    } else {
+      setSelectedChain(null);
+      setView('menu');
     }
   };
 
-
-  // Show blockchain selector
-  if (showCrypto && !selectedBlockchain) {
-    return (
-      <CryptoSelector
-        onSelect={(blockchain) => setSelectedBlockchain(blockchain)}
-        onBack={() => setShowCrypto(false)}
-      />
-    );
-  }
-
-  // Show Ethereum tip component
-  if (selectedBlockchain === 'ethereum') {
+  // ─── full wallet payment flow (EthereumTip / SolanaTip) ───
+  if (view === 'pay' && selectedChain === 'ethereum') {
     return (
       <EthereumTip
-        onBack={() => setSelectedBlockchain(null)}
-        receivingAddress={receivingAddresses.ethereum}
+        onBack={() => setView('detail')}
+        receivingAddress={profile.ethereumAddress}
       />
     );
   }
-
-  // Show Solana tip component
-  if (selectedBlockchain === 'solana') {
+  if (view === 'pay' && selectedChain === 'solana') {
     return (
       <SolanaTip
-        onBack={() => setSelectedBlockchain(null)}
-        receivingAddress={receivingAddresses.solana}
+        onBack={() => setView('detail')}
+        receivingAddress={profile.solanaAddress}
       />
     );
   }
 
-  // Show Bitcoin tip component
-  if (selectedBlockchain === 'bitcoin') {
+  // ─── detail: address + copy + connect wallet option ───
+  if (view === 'detail' && selected) {
     return (
-      <BitcoinTip
-        onBack={() => setSelectedBlockchain(null)}
-        receivingAddress={receivingAddresses.bitcoin}
-      />
-    );
-  }
-
-  // Show fiat payment method
-  if (selectedMethod) {
-    return (
-      <FiatTip method={selectedMethod} onBack={() => setSelectedMethod(null)} />
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white">
-      <div className="max-w-4xl mx-auto px-4 py-12">
-        <div className="text-center mb-12">
-          <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
-            Send a Tip
-          </h1>
-          <p className="text-xl text-gray-300">
-            Choose your preferred payment method
-          </p>
-
-          {!showQR && (
-            <button
-              onClick={() => setShowQR(true)}
-              className="mt-6 inline-flex items-center gap-2 px-6 py-3 bg-white/10 hover:bg-white/20 rounded-xl transition-all duration-300 backdrop-blur-sm"
-            >
-              <QrCode className="w-5 h-5" />
-              Show QR Code
-            </button>
-          )}
-
-          {showQR && qrDataUrl && (
-            <div className="mt-6 flex flex-col items-center">
-              <div className="p-6 bg-white rounded-2xl shadow-2xl animate-in fade-in slide-in-from-top-4 duration-500">
-                <img src={qrDataUrl} alt="QR Code" className="w-64 h-64" />
-                <p className="text-sm text-gray-600 mt-3">
-                  Scan to open this page
-                </p>
-              </div>
-              <button
-                onClick={() => setShowQR(false)}
-                className="mt-4 text-gray-400 hover:text-white transition-colors text-sm"
-              >
-                Hide QR Code
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* all payment methods in uniform grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* crypto payment */}
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white">
+        <div className="max-w-lg mx-auto px-4 py-12">
           <button
-            onClick={() => setShowCrypto(true)}
-            className="group relative overflow-hidden rounded-2xl bg-gradient-to-br p-[2px] hover:scale-105 transition-all duration-300 hover:shadow-2xl hover:shadow-purple-500/50"
-            style={{
-              background: 'linear-gradient(135deg, #3b82f6, #06b6d4)',
-            }}
+            onClick={handleBack}
+            className="mb-8 flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
           >
-            <div className="bg-slate-900 rounded-2xl p-8 h-full flex flex-col items-center justify-center space-y-4 min-h-[200px]">
-              <div className="text-white">
-                <Wallet className="w-8 h-8" />
-              </div>
-              <h3 className="text-2xl font-bold">Crypto (Any Token)</h3>
-              <p className="text-gray-400 text-sm text-center">Pay with any token on Ethereum, Solana, or Bitcoin</p>
-            </div>
+            <ArrowLeft className="w-5 h-5" /> Back
           </button>
 
-          {/* fiat payment methods */}
-          {fiatMethods.map((method) => (
+          <div className="text-center mb-10">
+            <div className="text-5xl mb-4">{selected.icon}</div>
+            <h1 className="text-3xl font-bold mb-2">
+              Pay with {selected.label}
+            </h1>
+            <p className="text-gray-400">copy the address or connect your wallet</p>
+          </div>
+
+          {/* address display + copy */}
+          <div className="bg-slate-800/60 border border-slate-700 rounded-xl p-6 mb-4">
+            <label className="text-xs text-gray-400 mb-3 block uppercase tracking-wider">
+              {selected.label} Address
+            </label>
+            <code className={`${selected.accent} text-sm break-all leading-relaxed block mb-4`}>
+              {selected.address}
+            </code>
+            <button
+              onClick={() => copyAddress(selected.address)}
+              className="w-full py-3 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors flex items-center justify-center gap-2 font-medium"
+            >
+              {copied ? (
+                <><Check className="w-5 h-5 text-green-400" /> Copied to clipboard</>
+              ) : (
+                <><Copy className="w-5 h-5" /> Copy Address</>
+              )}
+            </button>
+          </div>
+
+          <div className="relative my-8">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-slate-700" />
+            </div>
+            <div className="relative flex justify-center">
+              <span className="bg-slate-900 px-4 text-sm text-gray-500">or</span>
+            </div>
+          </div>
+
+          {/* connect wallet to pay directly */}
+          <button
+            onClick={() => setView('pay')}
+            className={`w-full py-4 bg-gradient-to-r ${selected.gradient} rounded-xl font-semibold text-lg flex items-center justify-center gap-3 hover:opacity-90 transition-opacity`}
+          >
+            <Wallet className="w-5 h-5" />
+            Connect Wallet & Pay
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── linktree-style menu ───
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white">
+      <div className="max-w-lg mx-auto px-4 py-12">
+        <div className="text-center mb-10">
+          <h1 className="text-4xl font-bold mb-3 bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
+            FU Pay Me
+          </h1>
+          <p className="text-xl text-gray-300">choose a payment method</p>
+        </div>
+
+        {chains.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-gray-500">no payment methods configured</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {chains.map((c) => (
               <button
-                key={method.id}
-                onClick={() => setSelectedMethod(method)}
-                className="group relative overflow-hidden rounded-2xl bg-gradient-to-br p-[2px] hover:scale-105 transition-all duration-300 hover:shadow-2xl hover:shadow-purple-500/50"
-                style={{
-                  background: `linear-gradient(135deg, ${
-                    method.type === 'crypto'
-                      ? '#3b82f6, #06b6d4'
-                      : method.type === 'cashapp'
-                      ? '#10b981, #059669'
-                      : method.type === 'venmo'
-                      ? '#0ea5e9, #3b82f6'
-                      : method.type === 'zelle'
-                      ? '#8b5cf6, #a855f7'
-                      : '#2563eb, #0ea5e9'
-                  })`,
-                }}
+                key={c.chain}
+                onClick={() => handleSelect(c.chain)}
+                className="w-full p-6 bg-slate-800/60 hover:bg-slate-700/60 border border-slate-700 rounded-xl flex items-center gap-4 transition-all hover:scale-[1.02]"
               >
-                <div className="bg-slate-900 rounded-2xl p-8 h-full flex flex-col items-center justify-center space-y-4 min-h-[200px]">
-                  <div className="text-white">
-                    {getMethodIcon(method.type)}
+                <div className={`w-14 h-14 bg-gradient-to-br ${c.gradient} rounded-xl flex items-center justify-center text-3xl`}>
+                  {c.icon}
+                </div>
+                <div className="text-left">
+                  <div className="font-semibold text-xl">{c.label}</div>
+                  <div className="text-sm text-gray-400">
+                    {c.chain === 'ethereum' ? 'ETH & ERC-20 tokens' : 'SOL & SPL tokens'}
                   </div>
-                  <h3 className="text-2xl font-bold">
-                    {method.name}
-                  </h3>
-                  <p className="text-gray-400 text-sm">Tap to continue</p>
                 </div>
               </button>
             ))}
+          </div>
+        )}
+
+        <div className="mt-12 text-center">
+          <p className="text-xs text-gray-600">powered by FU Pay Me</p>
         </div>
       </div>
     </div>
