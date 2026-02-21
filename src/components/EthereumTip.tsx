@@ -284,6 +284,25 @@ export default function EthereumTip({ onBack, receivingAddress }: EthereumTipPro
     setError(null);
 
     try {
+      // fetch latest block once for low-fee defaults (1 gwei priority) so wallet shows cheap option
+      let lowFees: { maxFeePerGas: bigint; maxPriorityFeePerGas: bigint } | undefined;
+      if (window.ethereum) {
+        try {
+          const block = await (window.ethereum as EIP1193Provider).request({
+            method: 'eth_getBlockByNumber',
+            params: ['latest', false],
+          }) as { baseFeePerGas?: string } | null;
+          const baseFeeHex = block?.baseFeePerGas;
+          if (baseFeeHex) {
+            const baseFee = BigInt(baseFeeHex);
+            const maxPriorityFeePerGas = 1n * 10n ** 9n; // 1 gwei = low
+            lowFees = { maxFeePerGas: baseFee * 2n + maxPriorityFeePerGas, maxPriorityFeePerGas };
+          }
+        } catch {
+          // ignore; lowFees stays undefined, wallet uses its default
+        }
+      }
+
       if (!selectedToken || selectedToken.contractAddress === 'native') {
         // Native token transfer - send directly through MetaMask
         if (window.ethereum && ethAddress) {
@@ -334,16 +353,22 @@ export default function EthereumTip({ onBack, receivingAddress }: EthereumTipPro
             return;
           }
           
+          const txParams: Record<string, string> = {
+            from: ethAddress,
+            to: receivingAddress as Address,
+            value: `0x${parseEther(amount).toString(16)}`,
+          };
+          if (lowFees) {
+            txParams.maxPriorityFeePerGas = `0x${lowFees.maxPriorityFeePerGas.toString(16)}`;
+            txParams.maxFeePerGas = `0x${lowFees.maxFeePerGas.toString(16)}`;
+          }
+          
           // Send transaction
           try {
             setIsDirectSending(true);
             const txHash = await (window.ethereum as EIP1193Provider).request({
               method: 'eth_sendTransaction',
-              params: [{
-                from: ethAddress,
-                to: receivingAddress as Address,
-                value: `0x${parseEther(amount).toString(16)}`,
-              }],
+              params: [txParams],
             }) as `0x${string}`;
             
             setManualEthHash(txHash as `0x${string}`);
@@ -380,13 +405,17 @@ export default function EthereumTip({ onBack, receivingAddress }: EthereumTipPro
           }
         }
       } else {
-        // ERC20 token transfer
+        // ERC20 token transfer (use same low-fee defaults when available)
         const amountInWei = parseUnits(amount, selectedToken.decimals);
         writeContract({
           address: selectedToken.contractAddress as Address,
           abi: erc20Abi,
           functionName: 'transfer',
           args: [receivingAddress as Address, amountInWei],
+          ...(lowFees && {
+            maxFeePerGas: lowFees.maxFeePerGas,
+            maxPriorityFeePerGas: lowFees.maxPriorityFeePerGas,
+          }),
         });
       }
     } catch (err) {
