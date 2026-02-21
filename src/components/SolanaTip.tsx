@@ -18,9 +18,22 @@ export default function SolanaTip({ onBack, receivingAddress }: SolanaTipProps) 
   const [isSolSending, setIsSolSending] = useState(false);
   const [solHash, setSolHash] = useState<string | null>(null);
   const [isSolSuccess, setIsSolSuccess] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   // Solana wallet hooks
   const { publicKey: solAddress, connected: isSolConnected, connect: connectSol, disconnect: disconnectSol, wallet, wallets, select } = useWallet();
+
+  // detect mobile so we only show the single "Mobile Wallet Adapter" option
+  useEffect(() => {
+    const check = () => {
+      const narrow = typeof window !== 'undefined' && window.innerWidth < 768;
+      const touch = typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      setIsMobile(Boolean(narrow || touch));
+    };
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
   const { connection } = useConnection();
 
   // Detect Solana network from endpoint
@@ -163,6 +176,22 @@ export default function SolanaTip({ onBack, receivingAddress }: SolanaTipProps) 
   const quickAmounts = ['0.1', '0.5', '1', '5', '10'];
   const tokens = POPULAR_TOKENS.solana;
 
+  // wallets to show in the connect list (exclude eth; on mobile only Mobile Wallet Adapter)
+  const solanaWalletsToShow = useMemo(() => {
+    const seen = new Set<string>();
+    let list = wallets.filter((w) => {
+      const name = w.adapter.name.toLowerCase();
+      if (name.includes('metamask') || name.includes('ethereum') || name.includes('walletconnect') || name.includes('injected')) return false;
+      if (seen.has(name)) return false;
+      seen.add(name);
+      return true;
+    });
+    if (isMobile) {
+      list = list.filter((w) => w.adapter.name.toLowerCase().includes('mobile wallet adapter'));
+    }
+    return list;
+  }, [wallets, isMobile]);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white">
       <div className="max-w-2xl mx-auto px-4 py-12">
@@ -281,67 +310,41 @@ export default function SolanaTip({ onBack, receivingAddress }: SolanaTipProps) 
                     <p className="text-lg font-bold text-white mb-1">Connect Your Wallet</p>
                     <p className="text-sm text-gray-400">Choose your favorite Solana wallet!</p>
                   </div>
-                  {wallets.length > 0 ? (
+                  {solanaWalletsToShow.length > 0 ? (
                     <div className="space-y-3">
-                      {(() => {
-                        // Filter out Ethereum wallets (MetaMask, etc.) and deduplicate
-                        const seenWallets = new Set<string>();
-                        const solanaWallets = wallets.filter((wallet) => {
-                          const walletName = wallet.adapter.name.toLowerCase();
-                          
-                          // Exclude Ethereum wallets - they don't work for Solana
-                          if (walletName.includes('metamask') || walletName.includes('ethereum') || 
-                              walletName.includes('walletconnect') || walletName.includes('injected')) {
-                            return false;
-                          }
-                          
-                          // Deduplicate
-                          if (seenWallets.has(walletName)) {
-                            return false;
-                          }
-                          seenWallets.add(walletName);
-                          return true;
-                        });
-                        
-                        return solanaWallets.map((wallet) => {
+                      {solanaWalletsToShow.map((wallet) => {
                           const readyState = wallet.adapter.readyState;
                           const canConnect = readyState === 'Installed' || readyState === 'Loadable';
                           const walletName = wallet.adapter.name.toLowerCase();
-                          const walletIcon = walletName.includes('phantom') ? '👻' : 
+                          const isMobileAdapter = walletName.includes('mobile wallet adapter');
+                          const displayName = isMobileAdapter ? 'Open wallet app' : wallet.adapter.name;
+                          const walletIcon = walletName.includes('phantom') ? '👻' :
                                            walletName.includes('solflare') ? '🔥' : '💜';
                           const statusEmoji = canConnect ? '✨' : '⏳';
-                          
+                          const statusText = isMobileAdapter
+                            ? (canConnect ? 'Phantom, Solflare, etc. · Ready!' : `(${readyState})`)
+                            : (canConnect ? `${statusEmoji} Ready!` : `(${readyState})`);
+
                           return (
                             <button
                               key={wallet.adapter.name}
                               onClick={() => handleConnectWallet(wallet.adapter.name)}
-                              className={`group w-full py-4 px-6 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center gap-3 ${
+                              className={`group w-full py-4 px-6 rounded-xl font-semibold transition-all duration-300 flex flex-col items-center justify-center gap-1 ${
                                 canConnect
                                   ? 'bg-gradient-to-r from-purple-500 via-pink-500 to-purple-600 hover:from-purple-600 hover:via-pink-600 hover:to-purple-700 hover:scale-105 hover:shadow-lg hover:shadow-purple-500/50 text-white'
                                   : 'bg-slate-700/50 hover:bg-slate-700 text-gray-400 hover:text-gray-300'
                               }`}
                             >
-                              <span className="text-2xl">{walletIcon}</span>
-                              <span>{wallet.adapter.name}</span>
-                              {canConnect ? (
-                                <span className="text-xs opacity-90">{statusEmoji} Ready!</span>
-                              ) : (
-                                <span className="text-xs opacity-75">({readyState})</span>
-                              )}
+                              <span className="flex items-center gap-3">
+                                <span className="text-2xl">{walletIcon}</span>
+                                <span>{displayName}</span>
+                              </span>
+                              <span className="text-xs opacity-90">{statusText}</span>
                             </button>
                           );
-                        });
-                      })()}
+                      })}
                       <p className="text-xs text-gray-500 text-center mt-3">
-                        Found {wallets.filter(w => {
-                          const name = w.adapter.name.toLowerCase();
-                          return !name.includes('metamask') && !name.includes('ethereum') && 
-                                 !name.includes('walletconnect') && !name.includes('injected');
-                        }).length} Solana wallet{wallets.filter(w => {
-                          const name = w.adapter.name.toLowerCase();
-                          return !name.includes('metamask') && !name.includes('ethereum') && 
-                                 !name.includes('walletconnect') && !name.includes('injected');
-                        }).length !== 1 ? 's' : ''} 🎉
+                        Found {solanaWalletsToShow.length} Solana wallet{solanaWalletsToShow.length !== 1 ? 's' : ''} 🎉
                       </p>
                     </div>
                   ) : (
