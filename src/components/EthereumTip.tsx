@@ -19,6 +19,7 @@ export default function EthereumTip({ onBack, receivingAddress }: EthereumTipPro
   const [showWalletSelector, setShowWalletSelector] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isDirectSending, setIsDirectSending] = useState(false);
+  const [explorerApiStatus, setExplorerApiStatus] = useState<{ status: number; origin: string } | null>(null);
 
   // Ethereum wallet hooks
   const { address: ethAddress, isConnected: isEthConnected, chain } = useAccount();
@@ -34,6 +35,18 @@ export default function EthereumTip({ onBack, receivingAddress }: EthereumTipPro
   const [isSwitchingNetwork, setIsSwitchingNetwork] = useState(false);
   const [lastNetworkSwitchTime, setLastNetworkSwitchTime] = useState<number | null>(null);
   
+  // pick up Explorer API result (payer view often has no console — show 403 message in UI)
+  useEffect(() => {
+    const win = window as Window & { __explorerApiStatus__?: { status: number; origin: string } };
+    if (win.__explorerApiStatus__) setExplorerApiStatus({ status: win.__explorerApiStatus__.status, origin: win.__explorerApiStatus__.origin });
+    const onResult = (e: Event) => {
+      const d = (e as CustomEvent<{ status: number; origin: string }>).detail;
+      if (d) setExplorerApiStatus({ status: d.status, origin: d.origin });
+    };
+    window.addEventListener('explorerApiResult', onResult);
+    return () => window.removeEventListener('explorerApiResult', onResult);
+  }, []);
+
   // Sync with wagmi's chain.id when it updates
   useEffect(() => {
     if (isEthConnected && chain?.id) {
@@ -545,6 +558,19 @@ export default function EthereumTip({ onBack, receivingAddress }: EthereumTipPro
                     <div className="text-4xl mb-2">👛</div>
                     <p className="text-lg font-bold text-white">Connect Your Wallet</p>
                   </div>
+                  {/* when Explorer API fails, payer sees this (no console on scanned link) */}
+                  {explorerApiStatus?.status === 403 && (
+                    <div className="p-3 rounded-lg bg-amber-500/15 border border-amber-500/40 text-amber-200 text-sm">
+                      <p className="font-medium mb-1">Wallet list couldn’t load</p>
+                      <p className="opacity-90">Site owner: add <code className="bg-black/30 px-1 rounded">{explorerApiStatus.origin}</code> to <a href="https://dashboard.reown.com" target="_blank" rel="noreferrer" className="underline">Reown Dashboard</a> → Project Domains.</p>
+                    </div>
+                  )}
+                  {explorerApiStatus?.status === 0 && (
+                    <div className="p-3 rounded-lg bg-slate-600/30 border border-slate-500/40 text-slate-200 text-sm">
+                      <p className="font-medium mb-1">Wallet list request failed</p>
+                      <p className="opacity-90">Network or CORS issue. Try again or open this link in your browser’s address bar.</p>
+                    </div>
+                  )}
                   {/* primary: open AppKit connect modal (mobile-friendly deep links + WalletConnect) */}
                   <button
                     type="button"

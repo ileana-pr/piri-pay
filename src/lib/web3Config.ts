@@ -24,8 +24,16 @@ if (typeof window !== 'undefined' && projectId) {
       }
       console.log('[Explorer API]', { status, origin, isMobile, walletCount });
       if (status === 403) console.warn('[Explorer API] 403 = origin not allowlisted. Add', origin, 'at dashboard.reown.com → Project Domains');
+      // expose to UI so payer view can show message when wallet list fails (no console needed)
+      const payload = { status, origin, isMobile };
+      (window as Window & { __explorerApiStatus__?: typeof payload }).__explorerApiStatus__ = payload;
+      window.dispatchEvent(new CustomEvent('explorerApiResult', { detail: payload }));
     })
-    .catch((err) => console.warn('[Explorer API] request failed', err));
+    .catch((err) => {
+      console.warn('[Explorer API] request failed', err);
+      (window as Window & { __explorerApiStatus__?: { status: number; origin: string; isMobile: boolean } }).__explorerApiStatus__ = { status: 0, origin: window.location.origin, isMobile: /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) };
+      window.dispatchEvent(new CustomEvent('explorerApiResult', { detail: { status: 0, origin: window.location.origin, isMobile: /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) } }));
+    });
 }
 
 const metadata = {
