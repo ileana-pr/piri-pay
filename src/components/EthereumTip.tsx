@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAccount, useConnect, useDisconnect, useWaitForTransactionReceipt, useWriteContract, useBalance } from 'wagmi';
 import { mainnet } from 'wagmi/chains';
+import type { EIP1193Provider } from 'viem';
 import { parseEther, parseUnits, erc20Abi, Address } from 'viem';
 import { ArrowLeft, Wallet, CheckCircle2, Loader2, AlertCircle } from 'lucide-react';
 import { POPULAR_TOKENS, TokenConfig } from '../lib/popularTokens';
@@ -55,9 +56,9 @@ export default function EthereumTip({ onBack, receivingAddress }: EthereumTipPro
       setError(null);
     };
     
-    window.ethereum.on('chainChanged', handleChainChanged);
+    (window.ethereum as EIP1193Provider).on('chainChanged', handleChainChanged);
     return () => {
-      window.ethereum?.removeListener('chainChanged', handleChainChanged);
+      (window.ethereum as EIP1193Provider)?.removeListener('chainChanged', handleChainChanged);
     };
   }, [isEthConnected]);
   
@@ -174,7 +175,7 @@ export default function EthereumTip({ onBack, receivingAddress }: EthereumTipPro
       const chainIdHex = `0x${expectedChain.id.toString(16)}`;
       
       try {
-        await window.ethereum.request({
+        await (window.ethereum as EIP1193Provider).request({
           method: 'wallet_switchEthereumChain',
           params: [{ chainId: chainIdHex }],
         });
@@ -182,7 +183,7 @@ export default function EthereumTip({ onBack, receivingAddress }: EthereumTipPro
       } catch (switchError: unknown) {
         const error = switchError as { code?: number };
         if (error.code === 4902) {
-          await window.ethereum.request({
+          await (window.ethereum as EIP1193Provider).request({
             method: 'wallet_addEthereumChain',
             params: [{
               chainId: chainIdHex,
@@ -207,7 +208,7 @@ export default function EthereumTip({ onBack, receivingAddress }: EthereumTipPro
       const maxAttempts = 20;
       while (attempts < maxAttempts) {
         try {
-          const walletChainId = await window.ethereum.request({ method: 'eth_chainId' });
+          const walletChainId = await (window.ethereum as EIP1193Provider).request({ method: 'eth_chainId' });
           const walletChainIdNum = typeof walletChainId === 'string' && walletChainId.startsWith('0x') 
             ? parseInt(walletChainId, 16) 
             : Number(walletChainId);
@@ -259,7 +260,7 @@ export default function EthereumTip({ onBack, receivingAddress }: EthereumTipPro
       // Verify RPC connection
       if (window.ethereum) {
         try {
-          await window.ethereum.request({ method: 'eth_blockNumber' });
+          await (window.ethereum as EIP1193Provider).request({ method: 'eth_blockNumber' });
         } catch {
           setError('RPC connection test failed. Please try refreshing the page.');
           return;
@@ -286,7 +287,7 @@ export default function EthereumTip({ onBack, receivingAddress }: EthereumTipPro
         if (window.ethereum && ethAddress) {
           // Check balance
           try {
-            const balanceHex = await window.ethereum.request({
+            const balanceHex = await (window.ethereum as EIP1193Provider).request({
               method: 'eth_getBalance',
               params: [ethAddress, 'latest'],
             });
@@ -306,7 +307,7 @@ export default function EthereumTip({ onBack, receivingAddress }: EthereumTipPro
           // Verify MetaMask chain ID
           let metaMaskChainId: number | null = null;
           try {
-            const chainIdHex = await window.ethereum.request({ method: 'eth_chainId' });
+            const chainIdHex = await (window.ethereum as EIP1193Provider).request({ method: 'eth_chainId' });
             metaMaskChainId = typeof chainIdHex === 'string' && chainIdHex.startsWith('0x') 
               ? parseInt(chainIdHex, 16) 
               : Number(chainIdHex);
@@ -325,7 +326,7 @@ export default function EthereumTip({ onBack, receivingAddress }: EthereumTipPro
           
           // Test RPC connection
           try {
-            await window.ethereum.request({ method: 'eth_blockNumber' });
+            await (window.ethereum as EIP1193Provider).request({ method: 'eth_blockNumber' });
           } catch {
             setError('RPC connection test failed. MetaMask may be having issues with the network.');
             return;
@@ -334,11 +335,11 @@ export default function EthereumTip({ onBack, receivingAddress }: EthereumTipPro
           // Send transaction
           try {
             setIsDirectSending(true);
-            const txHash = await window.ethereum.request({
+            const txHash = await (window.ethereum as EIP1193Provider).request({
               method: 'eth_sendTransaction',
               params: [{
                 from: ethAddress,
-                to: receivingAddress,
+                to: receivingAddress as Address,
                 value: `0x${parseEther(amount).toString(16)}`,
               }],
             }) as `0x${string}`;
