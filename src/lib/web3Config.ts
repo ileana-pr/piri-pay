@@ -5,16 +5,36 @@ import { mainnet } from '@reown/appkit/networks';
 
 const projectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || '';
 
-// log origin so you can confirm it matches Reown allowlist (must be exactly fu-pay-me.vercel.app)
-if (typeof window !== 'undefined') {
-  console.log('[Reown] App origin (add this to Reown Dashboard → Domain):', window.location.origin);
+// log origin and probe explorer API so we can see exactly what AppKit gets (403 vs 200, body)
+if (typeof window !== 'undefined' && projectId) {
+  console.log('[Reown] App origin (must match Reown Dashboard → Domain):', window.location.origin);
+  const explorerUrl = `https://explorer-api.walletconnect.com/v3/wallets?projectId=${projectId}&entries=5&page=1`;
+  fetch(explorerUrl)
+    .then((res) => {
+      const status = res.status;
+      return res.text().then((text) => ({ status, text }));
+    })
+    .then(({ status, text }) => {
+      if (status !== 200) {
+        console.warn('[Reown] Explorer API error — AppKit wallet list will fall back to customWallets only.', { status, body: text.slice(0, 500) });
+      } else {
+        try {
+          const data = JSON.parse(text);
+          const count = data?.listings?.length ?? data?.data?.length ?? '?';
+          console.log('[Reown] Explorer API OK — wallet list loaded.', { status, walletCount: count });
+        } catch {
+          console.log('[Reown] Explorer API response:', { status, bodyPreview: text.slice(0, 200) });
+        }
+      }
+    })
+    .catch((err) => console.warn('[Reown] Explorer API fetch failed (network/CORS?).', err));
 }
 
 const metadata = {
   name: 'FU Pay Me',
   description: 'Get paid with crypto',
-  url: typeof window !== 'undefined' ? window.location.origin : 'https://fu-pay-me.vercel.app',
-  icons: [typeof window !== 'undefined' ? `${window.location.origin}/vite.svg` : 'https://fu-pay-me.vercel.app/vite.svg'],
+  url: typeof window !== 'undefined' ? window.location.origin : 'https://fu-payme.vercel.app',
+  icons: [typeof window !== 'undefined' ? `${window.location.origin}/vite.svg` : 'https://fu-payme.vercel.app/vite.svg'],
 };
 
 const networks: [AppKitNetwork, ...AppKitNetwork[]] = [mainnet as AppKitNetwork];
@@ -59,7 +79,7 @@ const customWallets = [
   },
 ];
 
-// create modal — in Reown Dashboard → Domain, allowlist exactly: https://fu-pay-me.vercel.app and/or fu-pay-me.vercel.app (hyphen in "pay-me")
+// create modal — in Reown Dashboard → Domain, allowlist exactly: https://fu-payme.vercel.app and/or fu-payme.vercel.app
 if (projectId) {
   createAppKit({
     adapters: [wagmiAdapter],

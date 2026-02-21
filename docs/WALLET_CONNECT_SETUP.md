@@ -10,7 +10,7 @@ If the connect modal shows **0 wallets** or **blank cards**, the Reown API is li
 2. Select your project (or create one)
 3. Open **Project Domains** (or **Configure Domains**)
 4. Add these domains:
-   - `https://fu-pay-me.vercel.app` (production)
+   - `https://fu-payme.vercel.app` (production)
    - `https://localhost:5173` (local dev, if needed)
    - Any other deploy preview URLs you use (e.g. `*.vercel.app` if supported)
 
