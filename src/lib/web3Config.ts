@@ -42,6 +42,16 @@ const customWallets = [
     app_store: 'https://apps.apple.com/app/apple-store/id1288339409',
     play_store: 'https://play.google.com/store/apps/details?id=com.wallet.crypto.trustapp',
   },
+  {
+    id: '9716482a7c7d419b8a8f5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e',
+    name: 'Uniswap Wallet',
+    homepage: 'https://wallet.uniswap.org',
+    image_url: 'https://wallet.uniswap.org/favicon.ico',
+    mobile_link: 'https://wallet.uniswap.org',
+    webapp_link: 'https://wallet.uniswap.org',
+    app_store: 'https://apps.apple.com/us/app/uniswap-wallet/id6443944476',
+    play_store: 'https://play.google.com/store/apps/details?id=com.uniswap.mobile',
+  },
 ];
 
 // create modal — ensure your domain is in Project Domains at dashboard.reown.com (otherwise 403, blank wallets)
@@ -53,6 +63,7 @@ if (projectId) {
     metadata,
     enableCoinbase: false,
     customWallets,
+    debug: true, // remove after testing: shows console errors (e.g. APKT002 = origin not allowlisted)
     features: {
       analytics: false,
       swaps: false,
