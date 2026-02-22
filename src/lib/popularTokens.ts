@@ -26,6 +26,16 @@ export const POPULAR_TOKENS: Record<string, Record<string, TokenConfig[]>> = {
       { symbol: 'USDC', name: 'USD Coin', contractAddress: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913', decimals: 6 },
     ],
   },
+  bsc: {
+    native: [
+      { symbol: 'BNB', name: 'BNB', contractAddress: 'native', decimals: 18 },
+    ],
+    tokens: [
+      { symbol: 'USDT', name: 'Tether', contractAddress: '0x55d398326f99059fF775485246999027B3197955', decimals: 18 },
+      { symbol: 'BUSD', name: 'Binance USD', contractAddress: '0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56', decimals: 18 },
+      { symbol: 'USDC', name: 'USD Coin', contractAddress: '0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d', decimals: 18 },
+    ],
+  },
   solana: {
     native: [
       { symbol: 'SOL', name: 'Solana', contractAddress: 'native', decimals: 9 },
