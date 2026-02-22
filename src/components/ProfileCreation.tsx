@@ -16,6 +16,8 @@ export interface UserProfile {
   /** base payment address (or .base name); optional for backward compatibility */
   baseAddress?: string;
   solanaAddress: string;
+  /** cash app $cashtag (e.g. johndoe) — opens cash.app/$cashtag when tipper pays */
+  cashAppCashtag?: string;
 }
 
 interface ProfileCreationProps {
@@ -32,17 +34,18 @@ export default function ProfileCreation({ onSave, onBack, initialProfile }: Prof
     ethereumAddress: initialProfile?.ethereumAddress ?? '',
     baseAddress: initialProfile?.baseAddress ?? '',
     solanaAddress: initialProfile?.solanaAddress ?? '',
+    cashAppCashtag: initialProfile?.cashAppCashtag ?? '',
   });
-  const [editingChain, setEditingChain] = useState<'ethereum' | 'base' | 'solana'>('ethereum');
+  const [editingChain, setEditingChain] = useState<'ethereum' | 'base' | 'solana' | 'cashapp'>('ethereum');
   const [manualAddress, setManualAddress] = useState('');
   const [isResolving, setIsResolving] = useState(false);
   const [resolvedAddress, setResolvedAddress] = useState<string | null>(null);
   const [resolveError, setResolveError] = useState<string | null>(null);
 
-  const getAddressForChain = (chain: 'ethereum' | 'base' | 'solana') =>
-    chain === 'ethereum' ? profile.ethereumAddress : chain === 'base' ? profile.baseAddress : profile.solanaAddress;
+  const getAddressForChain = (chain: 'ethereum' | 'base' | 'solana' | 'cashapp') =>
+    chain === 'ethereum' ? profile.ethereumAddress : chain === 'base' ? profile.baseAddress : chain === 'solana' ? profile.solanaAddress : (profile.cashAppCashtag ?? '');
 
-  const handlePickChain = (chain: 'ethereum' | 'base' | 'solana') => {
+  const handlePickChain = (chain: 'ethereum' | 'base' | 'solana' | 'cashapp') => {
     setEditingChain(chain);
     setManualAddress(getAddressForChain(chain) ?? '');
     setResolvedAddress(null);
@@ -95,6 +98,17 @@ export default function ProfileCreation({ onSave, onBack, initialProfile }: Prof
 
   const handleSaveAddress = () => {
     const trimmed = manualAddress.trim();
+    // cash app: store $cashtag without the $, lowercase (cashtags are case-insensitive)
+    if (editingChain === 'cashapp') {
+      const cashtag = trimmed.replace(/^\$/, '').toLowerCase();
+      if (!cashtag) return;
+      setProfile(p => ({ ...p, cashAppCashtag: cashtag }));
+      setManualAddress('');
+      setResolvedAddress(null);
+      setResolveError(null);
+      setStep('review');
+      return;
+    }
     const looksLikeDomain = trimmed.toLowerCase().endsWith('.base') || trimmed.toLowerCase().endsWith('.eth') || trimmed.toLowerCase().endsWith('.sol') || trimmed.toLowerCase().includes('.base');
     const address = looksLikeDomain ? (resolvedAddress || null) : (resolvedAddress || trimmed);
     if (!address) return;
@@ -183,6 +197,22 @@ export default function ProfileCreation({ onSave, onBack, initialProfile }: Prof
               </div>
               <Plus className="w-5 h-5 text-gray-400" />
             </button>
+
+            <button
+              onClick={() => handlePickChain('cashapp')}
+              className="w-full p-6 bg-slate-800/60 hover:bg-slate-700/60 border border-slate-700 rounded-xl flex items-center justify-between transition-all hover:scale-[1.02]"
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 bg-emerald-500/20 rounded-xl flex items-center justify-center text-2xl font-bold text-emerald-400">$</div>
+                <div className="text-left">
+                  <div className="font-semibold text-xl">Cash App</div>
+                  <div className="text-sm text-gray-400">
+                    {profile.cashAppCashtag ? `$${profile.cashAppCashtag}` : '$cashtag (e.g. johndoe)'}
+                  </div>
+                </div>
+              </div>
+              <Plus className="w-5 h-5 text-gray-400" />
+            </button>
           </div>
 
           {hasAnyAddress && (
@@ -198,8 +228,45 @@ export default function ProfileCreation({ onSave, onBack, initialProfile }: Prof
     );
   }
 
-  // ─── step 2: manual address input ───
+  // ─── step 2: manual address input (or cash app cashtag) ───
   if (step === 'manual') {
+    // cash app: single field for $cashtag, no domain resolution
+    if (editingChain === 'cashapp') {
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white">
+          <div className="max-w-lg mx-auto px-4 py-12">
+            <button
+              onClick={() => setStep('chains')}
+              className="mb-6 flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5" /> Back
+            </button>
+            <div className="text-center mb-10">
+              <h1 className="text-3xl font-bold mb-2">Cash App $cashtag</h1>
+              <p className="text-gray-400">your Cash App username (with or without $)</p>
+            </div>
+            <div className="space-y-6">
+              <input
+                type="text"
+                value={manualAddress}
+                onChange={(e) => setManualAddress(e.target.value)}
+                placeholder="$johndoe or johndoe"
+                className="w-full px-4 py-4 bg-slate-800/60 border border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400 text-white placeholder-gray-500 text-lg"
+                autoFocus
+              />
+              <button
+                onClick={handleSaveAddress}
+                disabled={!manualAddress.trim().replace(/^\$/, '').trim()}
+                className="w-full py-4 bg-gradient-to-r from-emerald-500 to-green-600 rounded-xl font-semibold text-lg disabled:opacity-40 hover:opacity-90 transition-opacity"
+              >
+                Save $cashtag
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white">
         <div className="max-w-lg mx-auto px-4 py-12">
@@ -355,6 +422,31 @@ export default function ProfileCreation({ onSave, onBack, initialProfile }: Prof
                 className="flex items-center gap-1 text-sm text-gray-500 hover:text-purple-400 transition-colors"
               >
                 <Plus className="w-4 h-4" /> Add SOL address
+              </button>
+            )}
+          </div>
+
+          <div className="bg-slate-800/60 border border-slate-700 rounded-xl p-5">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <span className="text-xl font-bold text-emerald-400">$</span>
+                <span className="font-semibold">Cash App</span>
+              </div>
+              <button
+                onClick={() => handlePickChain('cashapp')}
+                className="text-xs text-gray-500 hover:text-white transition-colors"
+              >
+                {profile.cashAppCashtag ? 'Edit' : 'Add'}
+              </button>
+            </div>
+            {profile.cashAppCashtag ? (
+              <code className="text-emerald-400 text-sm">${profile.cashAppCashtag}</code>
+            ) : (
+              <button
+                onClick={() => handlePickChain('cashapp')}
+                className="flex items-center gap-1 text-sm text-gray-500 hover:text-emerald-400 transition-colors"
+              >
+                <Plus className="w-4 h-4" /> Add Cash App $cashtag
               </button>
             )}
           </div>
