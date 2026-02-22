@@ -1,6 +1,6 @@
 # 💰 Tip Me
 
-> **One QR code. All your payments.** Unify fiat and crypto in a single link—so vendors, creators, and anyone getting paid can make everyday life easier for everyone paying them.
+> **One QR code. All payments.** Our app unifies fiat and crypto in a single link—so vendors, creators, and anyone getting paid can make everyday life easier for everyone paying them.
 
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel-blue)](https://tip-me-ten.vercel.app)
 [![React](https://img.shields.io/badge/React-18.3.1-61DAFB?logo=react)](https://react.dev/)
@@ -9,7 +9,7 @@
 
 ## ✨ What Tip Me Does
 
-**One profile, one QR code—every way you get paid.** No more handing out different links for Venmo, Cash App, and each crypto chain. Set your payment options once; anyone who scans your QR sees **all** of them in one place and pays with whatever they already use.
+**One profile, one QR code—every way to get paid.** We don’t make people hand out different links for Venmo, Cash App, and each crypto chain. Users set their payment options once; anyone who scans the QR sees **all** of them in one place and pays with whatever they already use.
 
 ### Payment options (fiat + crypto in one place)
 
@@ -35,13 +35,12 @@
 
 ### Prerequisites
 
-- Node.js 18+ 
-- npm or yarn
+We use Node.js 18+ and npm or yarn.
 
-### Installation
+### Running the app locally
 
 ```bash
-# Clone the repository
+# Clone the repo
 git clone git@github.com:ileana-pr/tip-me.git
 
 # Navigate to the project
@@ -54,17 +53,17 @@ npm install
 npm run dev
 ```
 
-### Mobile Testing
+### Mobile testing
 
-To test on your mobile device (same WiFi network):
+To test on a phone on the same WiFi network:
 
 ```bash
 npm run dev:mobile
 ```
 
-Then open `http://YOUR_LOCAL_IP:5173` on your phone.
+Then open `http://YOUR_LOCAL_IP:5173` on the device.
 
-**Why it matters:** Combining every payment option into a single QR benefits everyone—vendors and businesses get one link to print or share, and payers (crypto or not) get a simple, familiar flow. The goal is to make paying and getting paid easier and to onboard as many people as possible, without forcing anyone into one app or one chain.
+**Why we built it:** Combining every payment option into a single QR benefits everyone—vendors and businesses get one link to print or share, and payers (crypto or not) get a simple, familiar flow. Our goal is to make paying and getting paid easier and to onboard as many people as possible, without forcing anyone into one app or one chain.
 
 ## 🛠️ Tech Stack
 
@@ -94,7 +93,7 @@ npm run typecheck    # Type check with TypeScript
 
 ## 🌐 Environment Variables
 
-Create a `.env` file in the root directory:
+We use a `.env` file in the project root:
 
 ```env
 VITE_ETH_ADDRESS=your_ethereum_address
@@ -117,4 +116,4 @@ This project is private and proprietary.
 
 ---
 
-⭐ If you find this project helpful, consider giving it a star!
+⭐ We welcome stars on the repo if you find our app helpful.

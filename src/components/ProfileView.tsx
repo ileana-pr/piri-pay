@@ -138,20 +138,20 @@ export default function ProfileView({ profile, onBack, onEdit }: ProfileViewProp
             </div>
           )}
 
-          {profile.bscAddress && (
+          {profile.bitcoinAddress && (
             <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-4 flex items-center gap-3">
-              <span className="text-xl font-bold text-amber-400">◆</span>
+              <span className="text-xl font-bold text-amber-400">₿</span>
               <div className="flex-1 min-w-0">
-                <div className="text-xs text-gray-400 mb-1">BNB Chain</div>
+                <div className="text-xs text-gray-400 mb-1">Bitcoin</div>
                 <code className="text-sm text-amber-400 break-all">
-                  {profile.bscAddress}
+                  {profile.bitcoinAddress}
                 </code>
               </div>
               <button
-                onClick={() => copyToClipboard(profile.bscAddress ?? '', 'bsc')}
+                onClick={() => copyToClipboard(profile.bitcoinAddress ?? '', 'btc')}
                 className="p-2 hover:bg-slate-700 rounded transition-colors shrink-0"
               >
-                {copied === 'bsc' ? (
+                {copied === 'btc' ? (
                   <Check className="w-4 h-4 text-green-400" />
                 ) : (
                   <Copy className="w-4 h-4 text-gray-400" />

@@ -2,11 +2,10 @@ import { useState } from 'react';
 import { Copy, Check, ArrowLeft, Wallet, ExternalLink } from 'lucide-react';
 import EthereumTip from './EthereumTip';
 import BaseTip from './BaseTip';
-import BscTip from './BscTip';
 import SolanaTip from './SolanaTip';
 import { UserProfile } from './ProfileCreation';
 
-type Chain = 'ethereum' | 'base' | 'bsc' | 'solana';
+type Chain = 'ethereum' | 'base' | 'bitcoin' | 'solana';
 type PaymentMethod = Chain | 'cashapp' | 'venmo';
 type View = 'menu' | 'detail' | 'pay';
 
@@ -50,13 +49,12 @@ export default function TipPage({ profile }: { profile: UserProfile }) {
       accent: 'text-indigo-400',
     });
   }
-  const bscAddress = profile.bscAddress ?? profile.ethereumAddress;
-  if (bscAddress) {
+  if (profile.bitcoinAddress) {
     chains.push({
-      chain: 'bsc',
-      address: bscAddress,
-      label: 'BNB Chain',
-      icon: '◆',
+      chain: 'bitcoin',
+      address: profile.bitcoinAddress,
+      label: 'Bitcoin',
+      icon: '₿',
       gradient: 'from-amber-500 to-yellow-500',
       accent: 'text-amber-400',
     });
@@ -116,12 +114,42 @@ export default function TipPage({ profile }: { profile: UserProfile }) {
       />
     );
   }
-  if (view === 'pay' && selectedChain === 'bsc') {
+  if (view === 'pay' && selectedChain === 'bitcoin') {
+    const btcAddress = profile.bitcoinAddress ?? '';
     return (
-      <BscTip
-        onBack={() => setView('detail')}
-        receivingAddress={bscAddress}
-      />
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-amber-900/20 to-slate-900 text-white">
+        <div className="max-w-lg mx-auto px-4 py-12">
+          <button
+            onClick={() => setView('detail')}
+            className="mb-8 flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5" /> Back
+          </button>
+          <div className="text-center mb-8">
+            <div className="text-5xl mb-4">₿</div>
+            <h1 className="text-3xl font-bold mb-2">Send Bitcoin</h1>
+            <p className="text-gray-400">copy the address or open in your Bitcoin wallet</p>
+          </div>
+          <div className="bg-slate-800/60 border border-slate-700 rounded-xl p-6 mb-4">
+            <label className="text-xs text-gray-400 mb-3 block uppercase tracking-wider">Bitcoin Address</label>
+            <code className="text-amber-400 text-sm break-all leading-relaxed block mb-4">{btcAddress}</code>
+            <button
+              onClick={() => copyAddress(btcAddress)}
+              className="w-full py-3 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors flex items-center justify-center gap-2 font-medium"
+            >
+              {copied ? <><Check className="w-5 h-5 text-green-400" /> Copied</> : <><Copy className="w-5 h-5" /> Copy Address</>}
+            </button>
+          </div>
+          <a
+            href={`bitcoin:${btcAddress}`}
+            className="w-full py-4 bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-700 hover:to-yellow-700 rounded-xl font-semibold text-lg flex items-center justify-center gap-3 transition-all"
+          >
+            <ExternalLink className="w-5 h-5" />
+            Open in Wallet
+          </a>
+          <p className="text-center text-sm text-gray-500 mt-4">opens your Bitcoin wallet with this address</p>
+        </div>
+      </div>
     );
   }
   if (view === 'pay' && selectedChain === 'solana') {
@@ -351,7 +379,7 @@ export default function TipPage({ profile }: { profile: UserProfile }) {
                 <div className="text-left">
                   <div className="font-semibold text-xl">{c.label}</div>
                   <div className="text-sm text-gray-400">
-                    {c.chain === 'ethereum' ? 'ETH & ERC-20 tokens' : c.chain === 'base' ? 'ETH & tokens on Base' : c.chain === 'bsc' ? 'BNB & tokens on BNB Chain' : 'SOL & SPL tokens'}
+                    {c.chain === 'ethereum' ? 'ETH & ERC-20 tokens' : c.chain === 'base' ? 'ETH & tokens on Base' : c.chain === 'bitcoin' ? 'Send BTC' : 'SOL & SPL tokens'}
                   </div>
                 </div>
               </button>

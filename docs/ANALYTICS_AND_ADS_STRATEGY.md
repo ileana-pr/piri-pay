@@ -2,11 +2,11 @@
 
 ## Overview
 
-Since TipMe is non-custodial (you don't process payments), you can't track actual transaction amounts. However, you CAN track valuable engagement and usage data that proves you have an active audience. This document outlines what you can track, how to implement it, and how to monetize through ads.
+Since we’re non-custodial (we don’t process payments), we can’t track actual transaction amounts. We can still track valuable engagement and usage data that proves we have an active audience. This document outlines what we can track, how we’d implement it, and how we might monetize through ads.
 
 ---
 
-## Part 1: What Data You CAN Track
+## Part 1: What data we can track
 
 ### ✅ Trackable Data (High Value)
 
@@ -44,37 +44,37 @@ Since TipMe is non-custodial (you don't process payments), you can't track actua
 - Referral sources (where QR codes are shared)
 - Profile sharing frequency
 
-### ❌ Data You CANNOT Track (Due to Non-Custodial Model)
+### ❌ Data we cannot track (non-custodial model)
 
-**1. Transaction Amounts**
-- You can't see how much money is sent
-- Transactions happen in wallets/apps you don't control
+**1. Transaction amounts**
+- We can’t see how much money is sent
+- Transactions happen in wallets/apps we don’t control
 
-**2. Payment Completion**
-- You can't confirm if a payment actually went through
-- You can only track "intent" (they clicked a payment method)
+**2. Payment completion**
+- We can’t confirm if a payment actually went through
+- We can only track “intent” (they clicked a payment method)
 
-**3. Recipient Identity**
+**3. Recipient identity**
 - Wallet addresses are pseudonymous
-- You can't identify who owns which wallet
+- We can’t identify who owns which wallet
 
-**4. Actual Payment Success**
-- No way to verify if Venmo/CashApp payments completed
+**4. Actual payment success**
+- No way for us to verify if Venmo/Cash App payments completed
 - No way to verify if crypto transactions succeeded
 
-### 🎯 What This Means for Advertisers
+### 🎯 What this means for advertisers
 
-**What Advertisers Care About:**
+**What advertisers care about:**
 - **Impressions**: How many people see ads
 - **Engagement**: How long they watch/interact
 - **Demographics**: Age, location, interests (anonymized)
-- **Intent**: Are they in "payment mode"? (High value!)
-- **Context**: What are they doing? (About to send money = high intent)
+- **Intent**: Are they in “payment mode”? (High value.)
+- **Context**: What they’re doing (about to send money = high intent)
 
-**Your Unique Value:**
+**Our unique value:**
 - Users are in a **high-intent state** (about to send money)
-- This is like being in a checkout line - they're ready to spend
-- Advertisers pay premium for this context
+- Like being in a checkout line—they’re ready to spend
+- Advertisers pay a premium for this context
 
 ---
 
@@ -237,7 +237,7 @@ Since TipMe is non-custodial (you don't process payments), you can't track actua
 
 **Tools:**
 - Upgrade to paid analytics (Mixpanel, Amplitude)
-- Custom dashboard for your data
+- Custom dashboard for our data
 
 ### Phase 4: Data Products (Month 3+)
 
@@ -260,12 +260,12 @@ Since TipMe is non-custodial (you don't process payments), you can't track actua
 
 **2. CCPA Compliance (California)**
 - Users can request their data
-- Must disclose what you track
+- We must disclose what we track
 - Opt-out mechanisms required
 
 **3. Best Practices**
 - **Anonymize everything**: Hash IPs, don't store personal info
-- **Be transparent**: Clear privacy policy explaining what you track
+- **Be transparent**: Clear privacy policy explaining what we track
 - **Give control**: Let users opt-out of non-essential tracking
 - **Secure data**: Encrypt analytics data
 
@@ -282,7 +282,7 @@ Since TipMe is non-custodial (you don't process payments), you can't track actua
 - Personal information (names, emails without consent)
 - Exact IP addresses (anonymize)
 - Wallet addresses (privacy concern)
-- Payment amounts (you can't anyway)
+- Payment amounts (we can’t anyway)
 
 ---
 
@@ -344,7 +344,7 @@ Since TipMe is non-custodial (you don't process payments), you can't track actua
 - Free: Basic features + ads
 - Ad-free premium: $5/month, no ads
 - **Best of both worlds**
-- **Best for**: TipMe (you get both revenue streams)
+- **Best for**: Tip Me (we get both revenue streams)
 
 ### Recommended Hybrid Model
 
@@ -411,12 +411,12 @@ Since TipMe is non-custodial (you don't process payments), you can't track actua
 - **Requires**: High engagement, good ad placement, premium option
 
 **The Key Insight:**
-Your users are in a **high-intent state** (about to send money). This is valuable to advertisers. Even if you can't track transaction amounts, you can prove engagement and monetize through ads while building a subscription revenue stream.
+Our users are in a **high-intent state** (about to send money). That’s valuable to advertisers. Even though we can’t track transaction amounts, we can prove engagement and monetize through ads while building a subscription revenue stream.
 
 **Start Simple:**
-1. Add basic analytics (prove you have users)
+1. Add basic analytics (prove we have users)
 2. Add inline ads (start earning immediately)
 3. Build ad unlock system (increase engagement)
 4. Add premium option (diversify revenue)
 
-The combination of ads + premium subscriptions gives you the best chance of profitability.
+The combination of ads + premium subscriptions gives us the best chance of profitability.

@@ -1,16 +1,15 @@
-tip-me
-Ileana Perez 
+# Tip Me – How our app works
 
+Ileana Perez
 
-- User1 goes to app website and creates a new account 
-     - sign up 
-     - enter ETH, SOL, BTC addresses 
-     - enter CashApp, Venmo, Zelle user names 
-     - app generates QR code 
+- A recipient comes to our app and creates a profile
+  - Sign up
+  - Enter ETH, SOL, BTC (and other chain) addresses
+  - Enter Cash App, Venmo, Zelle usernames
+  - We generate one QR code for everything
 
-- User2 scans QR code 
-     - app opens user1 payment portal 
-     - user2 selects payment option 
-     - app opens corresponding app with payment information pre-filled 
-     - user2 clicks PAY button
-     - app prompts user2 to create their own QR code 
+- When someone scans that QR code
+  - Our app opens the recipient’s payment portal
+  - The payer selects a payment option (fiat or crypto)
+  - Our app opens the corresponding app with payment info pre-filled, or connects their wallet
+  - After paying, we prompt the payer to create their own profile and QR code
