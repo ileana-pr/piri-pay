@@ -53,7 +53,8 @@ export default function ProfileCreation({ onSave, onBack, initialProfile }: Prof
   const isDomainName = useCallback((input: string) => {
     const trimmed = input.trim().toLowerCase();
     if (editingChain === 'ethereum') return trimmed.endsWith('.eth');
-    if (editingChain === 'base') return trimmed.endsWith('.base');
+    // base: require resolve for .base names or .base.eth (ENS subdomain) — never save raw name strings
+    if (editingChain === 'base') return trimmed.endsWith('.base') || trimmed.endsWith('.eth') || trimmed.includes('.base');
     if (editingChain === 'solana') return trimmed.endsWith('.sol');
     return false;
   }, [editingChain]);
@@ -90,9 +91,19 @@ export default function ProfileCreation({ onSave, onBack, initialProfile }: Prof
     }
   }, []);
 
+  const isValidEvmAddress = (s: string) => /^0x[a-fA-F0-9]{40}$/.test(s);
+
   const handleSaveAddress = () => {
-    const address = resolvedAddress || manualAddress.trim();
+    const trimmed = manualAddress.trim();
+    const looksLikeDomain = trimmed.toLowerCase().endsWith('.base') || trimmed.toLowerCase().endsWith('.eth') || trimmed.toLowerCase().endsWith('.sol') || trimmed.toLowerCase().includes('.base');
+    const address = looksLikeDomain ? (resolvedAddress || null) : (resolvedAddress || trimmed);
     if (!address) return;
+    // base and ethereum must store a valid 0x address (never a name string like chygtt.base.eth)
+    if ((editingChain === 'base' || editingChain === 'ethereum') && !isValidEvmAddress(address)) {
+      setResolveError('Please enter a valid 0x address or resolve a .base / .eth name first.');
+      return;
+    }
+    setResolveError(null);
     if (editingChain === 'ethereum') {
       setProfile(p => ({ ...p, ethereumAddress: address }));
     } else if (editingChain === 'base') {
