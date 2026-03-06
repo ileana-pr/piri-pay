@@ -1,99 +1,82 @@
 # 🖕😎 FU Pay Me
 
-> **One QR code. All payments.** Our app unifies fiat and crypto in a single link—so vendors, creators, and anyone getting paid can make everyday life easier for everyone paying them.
+> **One QR code. All payments.** I built this so you can unify fiat and crypto in a single link—one place for vendors, creators, or anyone getting paid to make life easier for everyone paying them.
 
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel-blue)](https://tip-me-ten.vercel.app)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel-blue)](https://fu-payme.vercel.app)
 [![React](https://img.shields.io/badge/React-18.3.1-61DAFB?logo=react)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.5-3178C6?logo=typescript)](https://www.typescriptlang.org/)
 [![Vite](https://img.shields.io/badge/Vite-5.4-646CFF?logo=vite)](https://vitejs.dev/)
 
-## ✨ What FU Pay Me Does
+## Backstory
 
-**One profile, one QR code—every way to get paid.** We don’t make people hand out different links for Venmo, Cash App, and each crypto chain. Users set their payment options once; anyone who scans the QR sees **all** of them in one place and pays with whatever they already use.
+This app was built on the fly at Homebase Denver 2026. It was my fourth ETH Denver, and I had a clear goal: find a full-time gig in web3. After three years of studying, grinding, and building, my attitude was different from years past—when I’d been more like begging for opportunity. This time it was (respectfully) *FU Pay Me*.
+
+I brought a handful of 3D-printed Ethereum keychains to sell for $10 USDC to help cover travel. Coordinating payment methods with so many people from different countries and on different chains and apps turned into a real hassle—and that quickly became an idea. I wanted my supporters to pay me quickly and without fuss, especially in a conference where everyone’s busy and on the run.
+
+I was building the prototype so fast I didn’t have time to think of a name. *FU Pay Me* was still the only thing on my mind, so I used it as a temporary placeholder. To my surprise, everyone—including Jesse—loved it. So here we are. I hope you find it a useful little tool, and remember to always say FU Pay Me … followed with a smile.
+
+---
+
+## ✨ What it does
+
+**One profile, one QR code—every way you get paid.** No more handing out different links for Venmo, Cash App, and each crypto chain. You set your payment options once; anyone who scans your QR sees **all** of them in one place and pays with whatever they already use.
 
 ### Payment options (fiat + crypto in one place)
 
-- 💵 **Fiat (what most people use every day)**
-  - Cash App
-  - Venmo
-  - Zelle
+- 💵 **Fiat (what most people use every day)** — Cash App, Venmo, Zelle
+- 🪙 **Crypto (all under the same QR)** — Ethereum (ETH & ERC-20), Base, Solana (SOL & SPL), Bitcoin (BTC via QR)
 
-- 🪙 **Crypto (all under the same QR)**
-  - Ethereum (ETH & ERC-20 tokens)
-  - Base (ETH & tokens on Base)
-  - Solana (SOL & SPL tokens)
-  - Bitcoin (BTC via QR)
+### For the person paying
 
-### How it works for payers
+One scan → one page with every option you accept. Fiat: they tap and land in Cash App, Venmo, or Zelle with details pre-filled. Crypto: they connect their wallet (MetaMask, Phantom, WalletConnect, etc.), choose amount, sign—no copy-pasting addresses. Domain names (like ENS) make addresses friendlier, but you still have to type or spell them; scanning a QR is scan-and-go. Works on mobile, deep links into apps, and scans from any phone camera.
 
-- **One scan** → one page with every option the recipient accepts
-- **Fiat**: tap and jump into Cash App, Venmo, or Zelle with details pre-filled
-- **Crypto**: connect wallet (MetaMask, Phantom, WalletConnect, etc.), choose amount, sign—no copy-pasting addresses
-- **Mobile-friendly**: responsive layout, deep links into payment apps, works from any phone camera
+## 🚀 Quick start
 
-## 🚀 Quick Start
+You’ll need Node.js 18+ and npm or yarn.
 
-### Prerequisites
-
-We use Node.js 18+ and npm or yarn.
-
-### Running the app locally
+### Run it locally
 
 ```bash
-# Clone the repo
-git clone git@github.com:ileana-pr/tip-me.git
-
-# Navigate to the project
-cd tip-me
-
-# Install dependencies
+git clone git@github.com:ileana-pr/fu-pay-me.git
+cd fu-pay-me
 npm install
-
-# Start development server
 npm run dev
 ```
 
-### Mobile testing
-
-To test on a phone on the same WiFi network:
+### Test on your phone (same WiFi)
 
 ```bash
 npm run dev:mobile
 ```
 
-Then open `http://YOUR_LOCAL_IP:5173` on the device.
+Then open `http://YOUR_LOCAL_IP:5173` on your phone.
 
-**Why we built it:** Combining every payment option into a single QR benefits everyone—vendors and businesses get one link to print or share, and payers (crypto or not) get a simple, familiar flow. Our goal is to make paying and getting paid easier and to onboard as many people as possible, without forcing anyone into one app or one chain.
+The whole point: one QR so you don’t have to choose between fiat and crypto. Vendors get one link to print or share; payers get a simple flow. I’m focused on making paying and getting paid easier and onboarding as many people as possible—without locking anyone into one app or one chain.
 
-## 🛠️ Tech Stack
+## 🛠️ Tech stack
 
-- **Frontend**: React 18 + TypeScript
-- **Build Tool**: Vite
-- **Styling**: Tailwind CSS
-- **Ethereum / Base**: Wagmi + Viem
-- **Solana**: @solana/wallet-adapter
-- **Bitcoin**: QR code generation
+React 18 + TypeScript, Vite, Tailwind. Ethereum/Base via Wagmi + Viem, Solana via @solana/wallet-adapter, Bitcoin QR generation. Nothing fancy—just stuff that works.
 
-## 📚 Documentation
+## 📚 Docs
 
-- **[docs/whitepaper.md](./docs/whitepaper.md)** - Full product vision: one QR for all payment methods (fiat + crypto)
-- **[docs/DEPLOY.md](./docs/DEPLOY.md)** - Deployment (e.g. Vercel)
-- **[docs/MOBILE_TESTING.md](./docs/MOBILE_TESTING.md)** - Testing on mobile devices
+- **[Whitepaper](./docs/whitepaper.md)** — The full vision: one QR for all payment methods (fiat + crypto)
+- **[How it works](./docs/README.md)** — Quick flow: profile → QR → pay
+- **[Mobile testing](./MOBILE_TESTING.md)** — Run it on your phone
 
-## 🎯 Available Scripts
+## 🎯 Scripts
 
 ```bash
-npm run dev          # Start dev server (localhost only)
-npm run dev:mobile   # Start dev server (network accessible)
-npm run build        # Build for production
-npm run preview      # Preview production build
-npm run lint         # Run ESLint
-npm run typecheck    # Type check with TypeScript
+npm run dev          # Dev server (localhost)
+npm run dev:mobile   # Dev server (same WiFi, for phone)
+npm run build        # Production build
+npm run preview      # Preview the build
+npm run lint         # ESLint
+npm run typecheck    # TypeScript check
 ```
 
-## 🌐 Environment Variables
+## 🌐 Env vars
 
-We use a `.env` file in the project root:
+Drop a `.env` in the project root with your addresses and handles (or leave optional ones blank):
 
 ```env
 VITE_ETH_ADDRESS=your_ethereum_address
@@ -108,12 +91,10 @@ VITE_ZELLE_HANDLE=your_zelle_email_or_phone
 
 ## 📝 License
 
-This project is private and proprietary.
+Private and proprietary.
 
-## 👤 Author
+## 👤
 
-**ileana-pr**
+**Ileana Perez** — [@ileana-pr](https://github.com/ileana-pr)
 
----
-
-⭐ We welcome stars on the repo if you find our app helpful.
+Stars are always appreciated if you find it useful. 🖕😎
