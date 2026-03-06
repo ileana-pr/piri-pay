@@ -1,4 +1,4 @@
-# Tip Me Whitepaper
+# FU Pay Me Whitepaper
 
 ## Executive Summary
 
@@ -80,7 +80,7 @@ After a payment, we prompt the payer to create their own profile. They can set u
 
 ### Our technical foundation
 
-We built Tip Me as a web app that generates payment pages. The QR code encodes a URL that loads the recipient’s payment page. That gives us:
+We built FU Pay Me as a web app that generates payment pages. The QR code encodes a URL that loads the recipient’s payment page. That gives us:
 - No backend required for core functionality
 - Payment info in the URL/page
 - Natural scaling—each QR is independent

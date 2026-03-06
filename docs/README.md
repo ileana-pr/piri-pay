@@ -1,4 +1,4 @@
-# Tip Me – How our app works
+# FU Pay Me – How our app works
 
 Ileana Perez
 

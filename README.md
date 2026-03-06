@@ -1,4 +1,4 @@
-# 💰 Tip Me
+# 🖕😎 FU Pay Me
 
 > **One QR code. All payments.** Our app unifies fiat and crypto in a single link—so vendors, creators, and anyone getting paid can make everyday life easier for everyone paying them.
 
@@ -7,7 +7,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.5-3178C6?logo=typescript)](https://www.typescriptlang.org/)
 [![Vite](https://img.shields.io/badge/Vite-5.4-646CFF?logo=vite)](https://vitejs.dev/)
 
-## ✨ What Tip Me Does
+## ✨ What FU Pay Me Does
 
 **One profile, one QR code—every way to get paid.** We don’t make people hand out different links for Venmo, Cash App, and each crypto chain. Users set their payment options once; anyone who scans the QR sees **all** of them in one place and pays with whatever they already use.
 
