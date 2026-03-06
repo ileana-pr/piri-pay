@@ -17,7 +17,7 @@ chains, and apps turned into a real hassle—and that quickly became an idea. I 
 my supporters to pay me quickly and without fuss, especially at a conference where 
 everyone's busy and on the run.
 
-I was building the prototype so fast I didn't have time to think of a name. So I used *FU Pay Me* as a temporary placeholder. To my surprise, the other devs at Home Base loved it—and so did [Jesse](https://x.com/jessepollak) himself. So here we are. I hope you find it a useful little tool, and remember, know your worth... and have the confidence to say **respectfully** FU Pay Me, followed with a smile.
+I was building the prototype so fast I didn't have time to think of a name. So I used *FU Pay Me* as a temporary placeholder. To my surprise, the team and other devs at Home Base loved it—and so did [Jesse](https://x.com/jessepollak/status/2028330957032628235?s=20) himself. So here we are. I hope you find it a useful little tool, and remember, know your worth... and have the confidence to say **respectfully** FU Pay Me, followed with a smile.
 
 ---
 
