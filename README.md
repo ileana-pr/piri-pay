@@ -43,6 +43,7 @@ The whole point: one QR so you don’t have to choose between fiat and crypto. V
 ## 📚 Docs
 
 - **[Whitepaper](./docs/whitepaper.md)** — The full vision: one QR for all payment methods (fiat + crypto)
+- **[Pitch deck](https://docs.google.com/presentation/d/1ylbeO8PD6wxaXjX0lCJFehSjAP4TLQWI/edit?usp=sharing&ouid=114728018986311301124&rtpof=true&sd=true)** *(WIP)*
 
 ## 🚀 Quick start
 
