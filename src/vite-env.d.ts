@@ -1,8 +1,9 @@
 /// <reference types="vite/client" />
 
-// Buffer polyfill for Solana libraries
+// Buffer polyfill for Solana libraries; ethereum = wallet injector (MetaMask etc.)
 interface Window {
   Buffer: typeof Buffer;
+  ethereum?: import('viem').EIP1193Provider;
 }
 
 interface ImportMetaEnv {

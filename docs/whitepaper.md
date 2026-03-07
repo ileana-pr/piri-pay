@@ -1,4 +1,4 @@
-# FU Pay Me Whitepaper
+# Piri Whitepaper
 
 Here’s the full picture of what I’m building and why.
 
@@ -92,7 +92,7 @@ After a payment, the app prompts the payer to create their own profile so they c
 
 ### Technical foundation
 
-I built FU Pay Me as a web app that generates payment pages. The QR encodes a URL that loads the recipient’s payment page. That means:
+Piri is a web app that generates payment pages. The QR encodes a URL that loads the recipient’s payment page. That means:
 - No backend required for core functionality
 - Payment info lives in the URL/page
 - Natural scaling—each QR is independent

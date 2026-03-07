@@ -3,19 +3,21 @@ import { Copy, Check, ArrowLeft, Wallet, ExternalLink } from 'lucide-react';
 import EthereumTip from './EthereumTip';
 import BaseTip from './BaseTip';
 import SolanaTip from './SolanaTip';
+import ChainLogo from './ChainLogo';
 import { UserProfile } from './ProfileCreation';
 
 type Chain = 'ethereum' | 'base' | 'bitcoin' | 'solana';
 type PaymentMethod = Chain | 'cashapp' | 'venmo';
 type View = 'menu' | 'detail' | 'pay';
 
+// original piri flavor palette for tiles/cards; no flavor names on labels
 interface ChainOption {
   chain: Chain;
   address: string;
   label: string;
-  icon: string;
-  gradient: string;
-  accent: string;
+  cardClass: string;
+  logoBoxClass: string; // border + bg for logo well, e.g. border-piri-ethereum bg-piri-ethereum/20
+  btnClass: string;
 }
 
 export default function TipPage({ profile }: { profile: UserProfile }) {
@@ -28,46 +30,17 @@ export default function TipPage({ profile }: { profile: UserProfile }) {
   // build the list of chains this payee has configured
   const chains: ChainOption[] = [];
   if (profile.ethereumAddress) {
-    chains.push({
-      chain: 'ethereum',
-      address: profile.ethereumAddress,
-      label: 'Ethereum',
-      icon: '⟠',
-      gradient: 'from-blue-500 to-cyan-500',
-      accent: 'text-cyan-400',
-    });
+    chains.push({ chain: 'ethereum', address: profile.ethereumAddress, label: 'Ethereum', cardClass: 'piri-card-ethereum', logoBoxClass: 'border-piri-ethereum bg-piri-ethereum/20', btnClass: 'bg-piri-ethereum' });
   }
-  // base: use dedicated base address if set, else fall back to eth address (same EVM format)
   const baseAddress = profile.baseAddress ?? profile.ethereumAddress;
   if (baseAddress) {
-    chains.push({
-      chain: 'base',
-      address: baseAddress,
-      label: 'Base',
-      icon: '⬡',
-      gradient: 'from-indigo-500 to-blue-500',
-      accent: 'text-indigo-400',
-    });
+    chains.push({ chain: 'base', address: baseAddress, label: 'Base', cardClass: 'piri-card-base', logoBoxClass: 'border-piri-base bg-piri-base/20', btnClass: 'bg-piri-base' });
   }
   if (profile.bitcoinAddress) {
-    chains.push({
-      chain: 'bitcoin',
-      address: profile.bitcoinAddress,
-      label: 'Bitcoin',
-      icon: '₿',
-      gradient: 'from-amber-500 to-yellow-500',
-      accent: 'text-amber-400',
-    });
+    chains.push({ chain: 'bitcoin', address: profile.bitcoinAddress, label: 'Bitcoin', cardClass: 'piri-card-bitcoin', logoBoxClass: 'border-piri-bitcoin bg-piri-bitcoin/20', btnClass: 'bg-piri-bitcoin' });
   }
   if (profile.solanaAddress) {
-    chains.push({
-      chain: 'solana',
-      address: profile.solanaAddress,
-      label: 'Solana',
-      icon: '◎',
-      gradient: 'from-purple-500 to-violet-500',
-      accent: 'text-purple-400',
-    });
+    chains.push({ chain: 'solana', address: profile.solanaAddress, label: 'Solana', cardClass: 'piri-card-solana', logoBoxClass: 'border-piri-solana bg-piri-solana/20', btnClass: 'bg-piri-solana' });
   }
 
   const selected = selectedChain && selectedChain !== 'cashapp' && selectedChain !== 'venmo' ? chains.find(c => c.chain === selectedChain) : null;
@@ -117,37 +90,30 @@ export default function TipPage({ profile }: { profile: UserProfile }) {
   if (view === 'pay' && selectedChain === 'bitcoin') {
     const btcAddress = profile.bitcoinAddress ?? '';
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-amber-900/20 to-slate-900 text-white">
+      <div className="piri-page">
         <div className="max-w-lg mx-auto px-4 py-12">
-          <button
-            onClick={() => setView('detail')}
-            className="mb-8 flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
-          >
+          <button onClick={() => setView('detail')} className="mb-8 flex items-center gap-2 font-semibold text-piri transition-opacity hover:opacity-70">
             <ArrowLeft className="w-5 h-5" /> Back
           </button>
           <div className="text-center mb-8">
-            <div className="text-5xl mb-4">₿</div>
-            <h1 className="text-3xl font-bold mb-2">Send Bitcoin</h1>
-            <p className="text-gray-400">copy the address or open in your Bitcoin wallet</p>
+            <div className="w-16 h-16 rounded-2xl border-2 border-piri-bitcoin bg-piri-bitcoin/20 flex items-center justify-center mx-auto mb-4 shadow-sm">
+              <ChainLogo chain="bitcoin" size={36} />
+            </div>
+            <h1 className="piri-heading text-3xl font-black mb-2">Bitcoin</h1>
+            <p className="text-sm font-semibold piri-muted">copy the address or open in your wallet</p>
           </div>
-          <div className="bg-slate-800/60 border border-slate-700 rounded-xl p-6 mb-4">
-            <label className="text-xs text-gray-400 mb-3 block uppercase tracking-wider">Bitcoin Address</label>
-            <code className="text-amber-400 text-sm break-all leading-relaxed block mb-4">{btcAddress}</code>
-            <button
-              onClick={() => copyAddress(btcAddress)}
-              className="w-full py-3 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors flex items-center justify-center gap-2 font-medium"
-            >
-              {copied ? <><Check className="w-5 h-5 text-green-400" /> Copied</> : <><Copy className="w-5 h-5" /> Copy Address</>}
+          <div className="rounded-xl p-6 mb-4 border-2 border-piri-bitcoin piri-card-bitcoin shadow-sm">
+            <label className="text-xs font-bold piri-muted mb-3 block uppercase tracking-wider">Bitcoin Address</label>
+            <code className="text-piri text-sm break-all leading-relaxed block mb-4 font-semibold">{btcAddress}</code>
+            <button onClick={() => copyAddress(btcAddress)} className="w-full py-3 rounded-xl font-bold text-white bg-piri-bitcoin flex items-center justify-center gap-2 transition-opacity hover:opacity-90">
+              {copied ? <><Check className="w-5 h-5" /> Copied</> : <><Copy className="w-5 h-5" /> Copy Address</>}
             </button>
           </div>
-          <a
-            href={`bitcoin:${btcAddress}`}
-            className="w-full py-4 bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-700 hover:to-yellow-700 rounded-xl font-semibold text-lg flex items-center justify-center gap-3 transition-all"
-          >
+          <a href={`bitcoin:${btcAddress}`} className="w-full py-4 rounded-xl font-bold text-white bg-piri-bitcoin flex items-center justify-center gap-3 transition-opacity hover:opacity-90 no-underline">
             <ExternalLink className="w-5 h-5" />
             Open in Wallet
           </a>
-          <p className="text-center text-sm text-gray-500 mt-4">opens your Bitcoin wallet with this address</p>
+          <p className="text-center text-sm piri-muted mt-4">Piri opens your Bitcoin wallet with this address</p>
         </div>
       </div>
     );
@@ -161,7 +127,6 @@ export default function TipPage({ profile }: { profile: UserProfile }) {
     );
   }
 
-  // ─── detail: Venmo — username, amount, open in app ───
   if (view === 'detail' && selectedChain === 'venmo' && venmoUsername) {
     const num = parseFloat(venmoAmount.trim().replace(/[^0-9.]/g, ''));
     const hasValidAmount = !isNaN(num) && num > 0;
@@ -171,48 +136,37 @@ export default function TipPage({ profile }: { profile: UserProfile }) {
       window.open(`https://venmo.com/${venmoUsername}?${params.toString()}`, '_blank', 'noopener,noreferrer');
     };
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white">
+      <div className="piri-page">
         <div className="max-w-lg mx-auto px-4 py-12">
-          <button
-            onClick={handleBack}
-            className="mb-8 flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
-          >
+          <button onClick={handleBack} className="mb-8 flex items-center gap-2 font-semibold text-piri transition-opacity hover:opacity-70">
             <ArrowLeft className="w-5 h-5" /> Back
           </button>
           <div className="text-center mb-10">
-            <div className="w-14 h-14 mx-auto mb-4 bg-gradient-to-br from-sky-500 to-blue-600 rounded-xl flex items-center justify-center text-2xl font-bold text-white">V</div>
-            <h1 className="text-3xl font-bold mb-2">Pay with Venmo</h1>
-            <p className="text-gray-400">enter amount and open Venmo to pay</p>
+            <div className="w-14 h-14 mx-auto mb-4 rounded-xl border-2 border-piri-venmo bg-piri-venmo/20 flex items-center justify-center shadow-sm">
+              <ChainLogo chain="venmo" size={32} />
+            </div>
+            <h1 className="piri-heading text-3xl font-black mb-2">Venmo</h1>
+            <p className="text-sm font-semibold piri-muted">enter amount, then open Venmo to pay</p>
           </div>
-          <div className="bg-slate-800/60 border border-slate-700 rounded-xl p-6 mb-4">
-            <label className="text-xs text-gray-400 mb-3 block uppercase tracking-wider">Pay to</label>
-            <code className="text-sky-400 text-lg block mb-4">@{venmoUsername}</code>
-            <button
-              onClick={() => { navigator.clipboard.writeText(`@${venmoUsername}`); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
-              className="w-full py-3 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors flex items-center justify-center gap-2 font-medium"
-            >
-              {copied ? <><Check className="w-5 h-5 text-green-400" /> Copied</> : <><Copy className="w-5 h-5" /> Copy username</>}
+          <div className="piri-card border-2 border-piri-venmo piri-card-venmo rounded-xl p-4 flex items-center gap-3 mb-4 shadow-sm">
+            <div className="flex-1 min-w-0">
+              <label className="text-xs font-bold piri-muted block mb-1">Pay to</label>
+              <code className="text-piri text-lg font-semibold block">@{venmoUsername}</code>
+            </div>
+            <button onClick={() => { navigator.clipboard.writeText(`@${venmoUsername}`); setCopied(true); setTimeout(() => setCopied(false), 2000); }} className="px-4 py-2 rounded-xl font-bold text-white bg-piri-venmo flex items-center gap-2 transition-opacity hover:opacity-90">
+              {copied ? <><Check className="w-4 h-4" /> Copied</> : <><Copy className="w-4 h-4" /> Copy</>}
             </button>
           </div>
-          <div className="bg-slate-800/60 border border-slate-700 rounded-xl p-6 mb-6">
-            <label className="text-xs text-gray-400 mb-3 block uppercase tracking-wider">Amount (optional)</label>
+          <div className="rounded-xl p-6 mb-6 border-2 border-piri-venmo piri-card-venmo shadow-sm">
+            <label className="text-xs font-bold piri-muted mb-3 block uppercase tracking-wider">Amount (optional)</label>
             <div className="flex items-center gap-2">
-              <span className="text-slate-400 text-lg">$</span>
-              <input
-                type="text"
-                inputMode="decimal"
-                value={venmoAmount}
-                onChange={(e) => setVenmoAmount(e.target.value)}
-                placeholder="0.00"
-                className="flex-1 px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-400 text-white placeholder-gray-500 text-lg"
-              />
+              <span className="text-piri text-lg">$</span>
+              <input type="text" inputMode="decimal" value={venmoAmount} onChange={(e) => setVenmoAmount(e.target.value)} placeholder="0.00"
+                className="flex-1 px-4 py-3 rounded-lg border-2 border-piri focus:outline-none focus:ring-2 focus:ring-piri text-piri placeholder-piri-muted text-lg font-semibold" />
             </div>
-            <p className="text-xs text-gray-500 mt-2">pre-fills in Venmo when you open the link</p>
+            <p className="text-xs piri-muted mt-2">Piri pre-fills this in Venmo when you open the link</p>
           </div>
-          <button
-            onClick={openVenmo}
-            className="w-full py-4 bg-gradient-to-r from-sky-500 to-blue-600 rounded-xl font-semibold text-lg flex items-center justify-center gap-3 hover:opacity-90 transition-opacity"
-          >
+          <button onClick={openVenmo} className="w-full py-4 rounded-xl font-bold text-white bg-piri-venmo flex items-center justify-center gap-3 transition-opacity hover:opacity-90">
             <ExternalLink className="w-5 h-5" />
             Open in Venmo
           </button>
@@ -221,7 +175,6 @@ export default function TipPage({ profile }: { profile: UserProfile }) {
     );
   }
 
-  // ─── detail: Cash App — $cashtag, amount, open in app ───
   if (view === 'detail' && selectedChain === 'cashapp' && cashtag) {
     const num = parseFloat(cashAppAmount.trim().replace(/[^0-9.]/g, ''));
     const hasValidAmount = !isNaN(num) && num > 0;
@@ -230,48 +183,37 @@ export default function TipPage({ profile }: { profile: UserProfile }) {
       window.open(`https://cash.app/$${cashtag}${amountSegment}`, '_blank', 'noopener,noreferrer');
     };
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white">
+      <div className="piri-page">
         <div className="max-w-lg mx-auto px-4 py-12">
-          <button
-            onClick={handleBack}
-            className="mb-8 flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
-          >
+          <button onClick={handleBack} className="mb-8 flex items-center gap-2 font-semibold text-piri transition-opacity hover:opacity-70">
             <ArrowLeft className="w-5 h-5" /> Back
           </button>
           <div className="text-center mb-10">
-            <div className="w-14 h-14 mx-auto mb-4 bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl flex items-center justify-center text-2xl font-bold">$</div>
-            <h1 className="text-3xl font-bold mb-2">Pay with Cash App</h1>
-            <p className="text-gray-400">enter amount and open Cash App to pay</p>
+            <div className="w-14 h-14 mx-auto mb-4 rounded-xl border-2 border-piri-cashapp bg-piri-cashapp/20 flex items-center justify-center shadow-sm">
+              <ChainLogo chain="cashapp" size={32} />
+            </div>
+            <h1 className="piri-heading text-3xl font-black mb-2">Cash App</h1>
+            <p className="text-sm font-semibold piri-muted">enter amount, then open Cash App to pay</p>
           </div>
-          <div className="bg-slate-800/60 border border-slate-700 rounded-xl p-6 mb-4">
-            <label className="text-xs text-gray-400 mb-3 block uppercase tracking-wider">Pay to</label>
-            <code className="text-emerald-400 text-lg block mb-4">${cashtag}</code>
-            <button
-              onClick={() => { navigator.clipboard.writeText(`$${cashtag}`); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
-              className="w-full py-3 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors flex items-center justify-center gap-2 font-medium"
-            >
-              {copied ? <><Check className="w-5 h-5 text-green-400" /> Copied</> : <><Copy className="w-5 h-5" /> Copy $cashtag</>}
+          <div className="piri-card border-2 border-piri-cashapp piri-card-cashapp rounded-xl p-4 flex items-center gap-3 mb-4 shadow-sm">
+            <div className="flex-1 min-w-0">
+              <label className="text-xs font-bold piri-muted block mb-1">Pay to</label>
+              <code className="text-piri text-lg font-semibold block">${cashtag}</code>
+            </div>
+            <button onClick={() => { navigator.clipboard.writeText(`$${cashtag}`); setCopied(true); setTimeout(() => setCopied(false), 2000); }} className="px-4 py-2 rounded-xl font-bold text-white bg-piri-cashapp flex items-center gap-2 transition-opacity hover:opacity-90">
+              {copied ? <><Check className="w-4 h-4" /> Copied</> : <><Copy className="w-4 h-4" /> Copy</>}
             </button>
           </div>
-          <div className="bg-slate-800/60 border border-slate-700 rounded-xl p-6 mb-6">
-            <label className="text-xs text-gray-400 mb-3 block uppercase tracking-wider">Amount (optional)</label>
+          <div className="rounded-xl p-6 mb-6 border-2 border-piri-cashapp piri-card-cashapp shadow-sm">
+            <label className="text-xs font-bold piri-muted mb-3 block uppercase tracking-wider">Amount (optional)</label>
             <div className="flex items-center gap-2">
-              <span className="text-slate-400 text-lg">$</span>
-              <input
-                type="text"
-                inputMode="decimal"
-                value={cashAppAmount}
-                onChange={(e) => setCashAppAmount(e.target.value)}
-                placeholder="0.00"
-                className="flex-1 px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-400 text-white placeholder-gray-500 text-lg"
-              />
+              <span className="text-piri text-lg">$</span>
+              <input type="text" inputMode="decimal" value={cashAppAmount} onChange={(e) => setCashAppAmount(e.target.value)} placeholder="0.00"
+                className="flex-1 px-4 py-3 rounded-lg border-2 border-piri focus:outline-none focus:ring-2 focus:ring-piri text-piri placeholder-piri-muted text-lg font-semibold" />
             </div>
-            <p className="text-xs text-gray-500 mt-2">pre-fills in Cash App when you open the link</p>
+            <p className="text-xs piri-muted mt-2">Piri pre-fills this in Cash App when you open the link</p>
           </div>
-          <button
-            onClick={openCashApp}
-            className="w-full py-4 bg-gradient-to-r from-emerald-500 to-green-600 rounded-xl font-semibold text-lg flex items-center justify-center gap-3 hover:opacity-90 transition-opacity"
-          >
+          <button onClick={openCashApp} className="w-full py-4 rounded-xl font-bold text-white bg-piri-cashapp flex items-center justify-center gap-3 transition-opacity hover:opacity-90">
             <ExternalLink className="w-5 h-5" />
             Open in Cash App
           </button>
@@ -280,64 +222,32 @@ export default function TipPage({ profile }: { profile: UserProfile }) {
     );
   }
 
-  // ─── detail: address + copy + connect wallet option ───
   if (view === 'detail' && selected) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white">
+      <div className="piri-page">
         <div className="max-w-lg mx-auto px-4 py-12">
-          <button
-            onClick={handleBack}
-            className="mb-8 flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
-          >
+          <button onClick={handleBack} className="mb-8 flex items-center gap-2 font-semibold text-piri transition-opacity hover:opacity-70">
             <ArrowLeft className="w-5 h-5" /> Back
           </button>
-
           <div className="text-center mb-10">
-            {selected.chain === 'base' ? (
-              <div className="w-16 h-16 bg-blue-500 rounded-xl mx-auto mb-4" />
-            ) : (
-              <div className="text-5xl mb-4">{selected.icon}</div>
-            )}
-            <h1 className="text-3xl font-bold mb-2">
-              Pay with {selected.label}
-            </h1>
-            <p className="text-gray-400">copy the address or connect your wallet</p>
+            <div className={`w-16 h-16 rounded-2xl border-2 ${selected.logoBoxClass} flex items-center justify-center mx-auto mb-4 shadow-sm`}>
+              <ChainLogo chain={selected.chain} size={36} />
+            </div>
+            <h1 className="piri-heading text-3xl font-black mb-2">Pay with {selected.label}</h1>
+            <p className="text-sm font-semibold piri-muted">copy the address or connect your wallet</p>
           </div>
-
-          {/* address display + copy */}
-          <div className="bg-slate-800/60 border border-slate-700 rounded-xl p-6 mb-4">
-            <label className="text-xs text-gray-400 mb-3 block uppercase tracking-wider">
-              {selected.label} Address
-            </label>
-            <code className={`${selected.accent} text-sm break-all leading-relaxed block mb-4`}>
-              {selected.address}
-            </code>
-            <button
-              onClick={() => copyAddress(selected.address)}
-              className="w-full py-3 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors flex items-center justify-center gap-2 font-medium"
-            >
-              {copied ? (
-                <><Check className="w-5 h-5 text-green-400" /> Copied to clipboard</>
-              ) : (
-                <><Copy className="w-5 h-5" /> Copy Address</>
-              )}
+          <div className={`piri-card border-2 ${selected.cardClass} flex-col items-stretch mb-4 rounded-xl shadow-sm`}>
+            <label className="text-xs font-bold piri-muted mb-2 block uppercase tracking-wider">{selected.label} Address</label>
+            <code className="text-piri text-sm break-all leading-relaxed block mb-4 font-semibold">{selected.address}</code>
+            <button onClick={() => copyAddress(selected.address)} className={`w-full py-3 rounded-xl font-bold text-white ${selected.btnClass} flex items-center justify-center gap-2 transition-opacity hover:opacity-90`}>
+              {copied ? <><Check className="w-5 h-5" /> Copied</> : <><Copy className="w-5 h-5" /> Copy Address</>}
             </button>
           </div>
-
           <div className="relative my-8">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-700" />
-            </div>
-            <div className="relative flex justify-center">
-              <span className="bg-slate-900 px-4 text-sm text-gray-500">or</span>
-            </div>
+            <div className="absolute inset-0 flex items-center"><div className="w-full border-t-2 border-piri opacity-20" /></div>
+            <div className="relative flex justify-center"><span className="bg-[var(--piri-bg)] px-4 text-sm font-semibold piri-muted">or</span></div>
           </div>
-
-          {/* connect wallet to pay directly */}
-          <button
-            onClick={() => setView('pay')}
-            className={`w-full py-4 bg-gradient-to-r ${selected.gradient} rounded-xl font-semibold text-lg flex items-center justify-center gap-3 hover:opacity-90 transition-opacity`}
-          >
+          <button onClick={() => setView('pay')} className={`w-full py-4 rounded-xl font-bold text-white ${selected.btnClass} flex items-center justify-center gap-3 transition-opacity hover:opacity-90`}>
             <Wallet className="w-5 h-5" />
             Connect Wallet & Pay
           </button>
@@ -348,18 +258,18 @@ export default function TipPage({ profile }: { profile: UserProfile }) {
 
   // ─── linktree-style menu ───
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white">
+    <div className="piri-page">
       <div className="max-w-lg mx-auto px-4 py-12">
         <div className="text-center mb-10">
-          <h1 className="text-4xl font-bold mb-3 bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
-            FU Pay Me
-          </h1>
-          <p className="text-xl text-gray-300">pay with crypto or fiat</p>
+          <h1 className="piri-heading text-4xl font-black mb-3">Piri</h1>
+          <p className="text-xl font-bold text-piri">pick your flavor · pay with crypto or fiat</p>
         </div>
 
         {chains.length === 0 && !cashtag && !venmoUsername ? (
-          <div className="text-center py-12">
-            <p className="text-gray-500">no payment methods configured</p>
+          <div className="text-center py-12 rounded-2xl border-2 border-piri bg-white/50 p-8">
+            <p className="text-2xl mb-2">🍧</p>
+            <p className="font-bold text-piri">Piri says: no payment methods set up yet</p>
+            <p className="text-sm piri-muted mt-1">Whoever shared this link can add ways to get paid in their Piri profile</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -367,44 +277,38 @@ export default function TipPage({ profile }: { profile: UserProfile }) {
               <button
                 key={c.chain}
                 onClick={() => handleSelect(c.chain)}
-                className="w-full p-6 bg-slate-800/60 hover:bg-slate-700/60 border border-slate-700 rounded-xl flex items-center gap-4 transition-all hover:scale-[1.02]"
+                className={`w-full p-6 rounded-xl border-2 flex items-center gap-4 transition-all hover:scale-[1.02] piri-card text-left shadow-sm ${c.cardClass}`}
               >
-                <div className={`w-14 h-14 bg-gradient-to-br ${c.gradient} rounded-xl flex items-center justify-center text-3xl`}>
-                  {c.chain === 'base' ? (
-                    <div className="w-8 h-8 bg-blue-500 rounded-lg" />
-                  ) : (
-                    c.icon
-                  )}
+                <div className={`w-14 h-14 rounded-xl border-2 flex items-center justify-center shrink-0 ${c.logoBoxClass}`}>
+                  <ChainLogo chain={c.chain} size={36} />
                 </div>
-                <div className="text-left">
-                  <div className="font-semibold text-xl">{c.label}</div>
-                  <div className="text-sm text-gray-400">
-                    {c.chain === 'ethereum' ? 'ETH & ERC-20 tokens' : c.chain === 'base' ? 'ETH & tokens on Base' : c.chain === 'bitcoin' ? 'Send BTC' : 'SOL & SPL tokens'}
+                <div className="min-w-0">
+                  <div className="font-bold text-xl text-piri">{c.label}</div>
+                  <div className="text-sm piri-muted">
+                    {c.chain === 'ethereum' ? 'ETH & ERC-20' : c.chain === 'base' ? 'ETH & tokens on Base' : c.chain === 'bitcoin' ? 'Send BTC' : 'SOL & SPL tokens'}
                   </div>
                 </div>
               </button>
             ))}
             {cashtag && (
-              <button
-                onClick={() => handleSelect('cashapp')}
-                className="w-full p-6 bg-slate-800/60 hover:bg-slate-700/60 border border-slate-700 rounded-xl flex items-center gap-4 transition-all hover:scale-[1.02]"
-              >
-                <div className="w-14 h-14 bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl flex items-center justify-center text-2xl font-bold text-white">$</div>
-                <div className="text-left">
-                  <div className="font-semibold text-xl">Cash App</div>
-                  <div className="text-sm text-gray-400">Pay ${cashtag} via Cash App</div>
+              <button onClick={() => handleSelect('cashapp')} className="w-full p-6 rounded-xl border-2 flex items-center gap-4 transition-all hover:scale-[1.02] piri-card piri-card-cashapp text-left shadow-sm">
+                <div className="w-14 h-14 rounded-xl border-2 border-piri-cashapp bg-piri-cashapp/20 flex items-center justify-center shrink-0">
+                  <ChainLogo chain="cashapp" size={36} />
+                </div>
+                <div className="min-w-0">
+                  <div className="font-bold text-xl text-piri">Cash App</div>
+                  <div className="text-sm piri-muted">Pay ${cashtag}</div>
                 </div>
               </button>
             )}
             {venmoUsername && (
-              <button
-                onClick={() => handleSelect('venmo')}
-                className="w-full p-6 bg-slate-800/60 hover:bg-slate-700/60 border border-slate-700 rounded-xl flex items-center gap-4 transition-all hover:scale-[1.02]"
-              >
-                <div className="w-14 h-14 bg-gradient-to-br from-sky-500 to-blue-600 rounded-xl flex items-center justify-center text-2xl font-bold text-white">V</div>
-                <div className="text-left">
-                  <div className="font-semibold text-xl">Venmo</div>
-                  <div className="text-sm text-gray-400">Pay @{venmoUsername} via Venmo</div>
+              <button onClick={() => handleSelect('venmo')} className="w-full p-6 rounded-xl border-2 flex items-center gap-4 transition-all hover:scale-[1.02] piri-card piri-card-venmo text-left shadow-sm">
+                <div className="w-14 h-14 rounded-xl border-2 border-piri-venmo bg-piri-venmo/20 flex items-center justify-center shrink-0">
+                  <ChainLogo chain="venmo" size={36} />
+                </div>
+                <div className="min-w-0">
+                  <div className="font-bold text-xl text-piri">Venmo</div>
+                  <div className="text-sm piri-muted">Pay @{venmoUsername}</div>
                 </div>
               </button>
             )}
@@ -412,25 +316,10 @@ export default function TipPage({ profile }: { profile: UserProfile }) {
         )}
 
         <div className="mt-12 text-center">
-          <p className="text-xs text-gray-600">
-            Made with <span className="text-blue-500">💙</span> for{' '}
-            <a
-              href="https://x.com/homebasedotlove"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 hover:underline"
-            >
-              Home Base
-            </a>
+          <p className="text-xs font-semibold piri-muted">
+            Made with <span aria-label="love">🍧</span> for <a href="https://x.com/homebasedotlove" target="_blank" rel="noopener noreferrer" className="piri-link">Home Base</a>
             {' · ETH Denver 2026 · '}
-            <a
-              href="https://x.com/adigitaltati"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 hover:underline"
-            >
-              @adigitaltati
-            </a>
+            <a href="https://x.com/adigitaltati" target="_blank" rel="noopener noreferrer" className="piri-link">@adigitaltati</a>
           </p>
         </div>
       </div>

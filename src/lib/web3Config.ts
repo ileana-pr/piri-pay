@@ -6,7 +6,7 @@ import { http } from 'wagmi';
 const projectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || '';
 
 export const config = getDefaultConfig({
-  appName: 'FU Pay Me',
+  appName: 'Piri',
   projectId,
   chains: [mainnet, base],
   transports: {

@@ -1,8 +1,12 @@
 {
-  "name": "fu-pay-me",
+  "name": "piri",
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ileana-pr/piri.git"
+  },
   "scripts": {
     "postinstall": "patch-package",
     "dev": "vite",
@@ -13,6 +17,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.app.json"
   },
   "dependencies": {
+    "@metamask/sdk": "^0.33.1",
     "@rainbow-me/rainbowkit": "^2.2.10",
     "@reown/appkit": "^1.8.18",
     "@reown/appkit-adapter-wagmi": "^1.8.18",

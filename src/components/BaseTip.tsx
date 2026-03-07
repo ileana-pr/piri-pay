@@ -5,8 +5,9 @@ import { useConnectModal } from '@rainbow-me/rainbowkit';
 import { base } from 'wagmi/chains';
 import type { EIP1193Provider } from 'viem';
 import { parseEther, parseUnits, erc20Abi, Address } from 'viem';
-import { ArrowLeft, Wallet, CheckCircle2, Loader2, AlertCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Loader2, AlertCircle, XCircle } from 'lucide-react';
 import { POPULAR_TOKENS, TokenConfig } from '../lib/popularTokens';
+import ChainLogo from './ChainLogo';
 
 interface BaseTipProps {
   onBack: () => void;
@@ -18,6 +19,7 @@ export default function BaseTip({ onBack, receivingAddress }: BaseTipProps) {
   const [amount, setAmount] = useState('');
   const [showWalletSelector, setShowWalletSelector] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [transactionCancelled, setTransactionCancelled] = useState(false);
   const [isDirectSending, setIsDirectSending] = useState(false);
   const { address: ethAddress, isConnected: isEthConnected, chain } = useAccount();
   const { error: connectError, isPending: isConnecting } = useConnect();
@@ -84,6 +86,18 @@ export default function BaseTip({ onBack, receivingAddress }: BaseTipProps) {
     return actualChainId !== expectedChain.id;
   }, [isEthConnected, actualChainId, expectedChain.id]);
 
+  const isUserRejection = useCallback((msg: string, code?: number) => {
+    const m = msg.toLowerCase();
+    return m.includes('user rejected') || m.includes('rejected the request') || m.includes('user denied') ||
+      m.includes('cancelled') || m.includes('canceled') || m.includes('action_rejected') || code === 4001;
+  }, []);
+
+  const handleStartOver = useCallback(() => {
+    setTransactionCancelled(false);
+    setError(null);
+    resetContract();
+  }, [resetContract]);
+
   const isSending = isContractSending || isDirectSending;
   const isConfirming = isEthConfirming || isContractConfirming;
   const isSuccess = isEthSuccess || isContractSuccess;
@@ -117,11 +131,11 @@ export default function BaseTip({ onBack, receivingAddress }: BaseTipProps) {
       if (errorMessage.includes('insufficient funds') || errorMessage.includes('insufficient balance')) {
         return 'Insufficient balance. Please ensure you have enough tokens to cover the transaction amount and gas fees.';
       }
-      if (errorMessage.includes('user rejected')) return null;
+      if (isUserRejection(errorMessage)) return null;
       return errorMessage;
     }
     return null;
-  }, [error, contractError, balance]);
+  }, [error, contractError, balance, isUserRejection]);
 
   const explorerUrl = useMemo(() => {
     if (!hash) return null;
@@ -136,15 +150,16 @@ export default function BaseTip({ onBack, receivingAddress }: BaseTipProps) {
     if (isDirectSending) return;
     if (contractError) {
       const errorMessage = contractError?.message || contractError?.toString() || 'Transaction failed';
-      if (!errorMessage.toLowerCase().includes('user rejected') &&
-          !errorMessage.toLowerCase().includes('rejected the request') &&
-          !errorMessage.toLowerCase().includes('user denied')) {
+      if (isUserRejection(errorMessage)) {
+        setTransactionCancelled(true);
+        setError(null);
+      } else {
         setError(errorMessage);
       }
       const timer = setTimeout(() => { resetContract(); }, 3000);
       return () => clearTimeout(timer);
     }
-  }, [contractError, resetContract, isDirectSending]);
+  }, [contractError, resetContract, isDirectSending, isUserRejection]);
 
   const handleSwitchNetwork = useCallback(async () => {
     if (!window.ethereum) return;
@@ -330,18 +345,15 @@ export default function BaseTip({ onBack, receivingAddress }: BaseTipProps) {
               if ('message' in errorObj) errorMessage = String(errorObj.message);
               if ('code' in errorObj) errorCode = Number(errorObj.code);
             }
-            const isUserRejection =
-              errorMessage.toLowerCase().includes('user rejected') ||
-              errorMessage.toLowerCase().includes('user denied') ||
-              errorCode === 4001;
-            if (!isUserRejection) {
+            if (isUserRejection(errorMessage, errorCode)) {
+              setTransactionCancelled(true);
+              setError(null);
+            } else {
               if (errorCode === -32603 || errorMessage.includes('Internal JSON-RPC error')) {
                 setError(`MetaMask RPC Error: ${errorMessage}\n\nTry: 1. Refreshing the page 2. Switching to Base and back in MetaMask 3. Settings → Networks → Base → RPC URL 4. Reset Account (Settings → Advanced).`);
               } else {
                 setError(errorMessage);
               }
-            } else {
-              setError(null);
             }
           }
         }
@@ -362,7 +374,7 @@ export default function BaseTip({ onBack, receivingAddress }: BaseTipProps) {
       console.error('Transaction error:', err);
       setError('Transaction failed. Please try again.');
     }
-  }, [amount, ethAddress, networkMismatch, actualChainId, expectedChain, receivingAddress, selectedToken, writeContract, lastNetworkSwitchTime]);
+  }, [amount, ethAddress, networkMismatch, actualChainId, expectedChain, receivingAddress, selectedToken, writeContract, lastNetworkSwitchTime, isUserRejection]);
 
   useEffect(() => {
     if (isEthConnected && amount && showWalletSelector && selectedToken) {
@@ -381,6 +393,7 @@ export default function BaseTip({ onBack, receivingAddress }: BaseTipProps) {
       return;
     }
     setError(null);
+    setTransactionCancelled(false);
     if (isEthConnected) {
       handleSendTip();
     } else {
@@ -392,23 +405,23 @@ export default function BaseTip({ onBack, receivingAddress }: BaseTipProps) {
   const tokens = POPULAR_TOKENS.base;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-900 to-slate-900 text-white">
+    <div className="piri-page">
       <div className="max-w-2xl mx-auto px-4 py-12">
         <button
           onClick={onBack}
-          className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors mb-8"
+          className="flex items-center gap-2 font-semibold text-piri transition-opacity hover:opacity-70 mb-8"
         >
           <ArrowLeft className="w-5 h-5" />
           Back
         </button>
 
-        <div className="bg-slate-800/50 backdrop-blur-lg rounded-3xl p-8 border border-slate-700/50 shadow-2xl">
+        <div className="rounded-3xl p-8 border-2 border-piri-base piri-card-base shadow-xl backdrop-blur-sm">
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-indigo-500 to-blue-500 rounded-2xl mb-4">
-              <Wallet className="w-8 h-8" />
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl border-2 border-piri-base bg-piri-base/20 mb-4 shadow-sm">
+              <ChainLogo chain="base" size={40} />
             </div>
-            <h2 className="text-3xl font-bold mb-2">Base</h2>
-            <p className="text-gray-400">Your payment address is pre-filled automatically</p>
+            <h2 className="piri-heading text-3xl font-black mb-2">Base</h2>
+            <p className="text-sm piri-muted font-semibold">Your payment address is pre-filled automatically</p>
           </div>
 
           {!isSuccess ? (
@@ -421,7 +434,7 @@ export default function BaseTip({ onBack, receivingAddress }: BaseTipProps) {
                       <button
                         key={token.symbol}
                         onClick={() => setSelectedToken(token)}
-                        className="w-full py-4 px-6 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 rounded-xl font-semibold text-lg transition-all duration-300 hover:scale-105 flex items-center justify-center gap-2"
+                        className="w-full py-4 px-6 rounded-xl font-semibold text-lg bg-piri-base text-white transition-all duration-300 hover:scale-105 flex items-center justify-center gap-2 hover:opacity-90"
                       >
                         {token.symbol} - {token.name}
                       </button>
@@ -446,7 +459,7 @@ export default function BaseTip({ onBack, receivingAddress }: BaseTipProps) {
                         <p className="text-xl font-bold">{selectedToken.symbol} - {selectedToken.name}</p>
                       </div>
                       <button
-                        onClick={() => setSelectedToken(null)}
+                        onClick={() => { setSelectedToken(null); setTransactionCancelled(false); }}
                         className="text-sm text-gray-400 hover:text-white transition-colors"
                       >
                         Change
@@ -460,7 +473,7 @@ export default function BaseTip({ onBack, receivingAddress }: BaseTipProps) {
                       step="0.001"
                       min="0"
                       value={amount}
-                      onChange={(e) => { setAmount(e.target.value); setError(null); }}
+                      onChange={(e) => { setAmount(e.target.value); setError(null); setTransactionCancelled(false); }}
                       placeholder="0.00"
                       disabled={isSending || isConfirming}
                       className="w-full px-6 py-4 bg-slate-900/50 border border-slate-700/50 rounded-xl text-2xl font-bold text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all disabled:opacity-50"
@@ -476,7 +489,7 @@ export default function BaseTip({ onBack, receivingAddress }: BaseTipProps) {
                     {quickAmounts.map((amt) => (
                       <button
                         key={amt}
-                        onClick={() => { setAmount(amt); setError(null); }}
+                        onClick={() => { setAmount(amt); setError(null); setTransactionCancelled(false); }}
                         disabled={isSending || isConfirming}
                         className="py-2 px-3 bg-slate-700/50 hover:bg-slate-700 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
                       >
@@ -559,7 +572,33 @@ export default function BaseTip({ onBack, receivingAddress }: BaseTipProps) {
                 </div>
               )}
 
-              {formattedError && !networkMismatch && (
+              {transactionCancelled && (
+                <div className="flex flex-col gap-4 p-6 bg-amber-500/10 border border-amber-500/40 rounded-2xl">
+                  <div className="flex items-start gap-3">
+                    <XCircle className="w-6 h-6 text-amber-500 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-semibold text-amber-700 dark:text-amber-400">Transaction cancelled</p>
+                      <p className="text-sm text-amber-600/90 dark:text-amber-300/80 mt-1">No worries — your funds are safe. You can try again whenever you&apos;re ready.</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-3">
+                    <button
+                      onClick={handleStartOver}
+                      className="px-4 py-2 bg-piri text-white font-semibold rounded-xl hover:opacity-90 transition-opacity"
+                    >
+                      Start over
+                    </button>
+                    <button
+                      onClick={onBack}
+                      className="px-4 py-2 bg-slate-600 hover:bg-slate-500 text-white font-semibold rounded-xl transition-colors"
+                    >
+                      Go back
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {formattedError && !networkMismatch && !transactionCancelled && (
                 <div className="flex items-start gap-2 p-4 bg-red-500/10 border border-red-500/50 rounded-xl text-red-400">
                   <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
                   <div className="flex-1">
@@ -569,7 +608,7 @@ export default function BaseTip({ onBack, receivingAddress }: BaseTipProps) {
                 </div>
               )}
 
-              {selectedToken && !showWalletSelector && (
+              {selectedToken && !showWalletSelector && !transactionCancelled && (
                 <button
                   onClick={handleTipClick}
                   disabled={!amount || isSending || isConfirming || networkMismatch || isSwitchingNetwork}

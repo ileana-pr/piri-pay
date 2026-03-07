@@ -24,7 +24,7 @@ function App() {
   useEffect(() => {
     const path = window.location.pathname;
     if (!path.startsWith('/tip/')) {
-      const saved = localStorage.getItem('fupayme-profile');
+      const saved = localStorage.getItem('piri-profile');
       if (saved) {
         try {
           setUserProfile(JSON.parse(saved));
@@ -35,7 +35,7 @@ function App() {
     }
   }, []);
 
-  // if we're on a payment page, show TipPage
+  // if we're on a payment page, show payer experience
   const path = window.location.pathname;
   if (path.startsWith('/tip/')) {
     const encodedProfile = path.replace(/^\/tip\//, '').split('/')[0];
@@ -62,7 +62,7 @@ function App() {
   const handleBackToHome = () => setCurrentPage('home');
 
   const handleSaveProfile = (profile: UserProfile) => {
-    localStorage.setItem('fupayme-profile', JSON.stringify(profile));
+    localStorage.setItem('piri-profile', JSON.stringify(profile));
     setUserProfile(profile);
     setCurrentPage('view');
   };

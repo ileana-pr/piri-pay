@@ -1,4 +1,4 @@
-import { QrCode, Plus, Wallet } from 'lucide-react';
+import { QrCode, Plus } from 'lucide-react';
 
 interface HomePageProps {
   onCreateProfile: () => void;
@@ -6,48 +6,49 @@ interface HomePageProps {
   hasProfile: boolean;
 }
 
+// logo: Piri character image at public/logo/piri.png (required for home hero)
+const LOGO_SRC = '/logo/piri.png';
+
 export default function HomePage({ onCreateProfile, onViewProfile, hasProfile }: HomePageProps) {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white">
+    <div className="piri-page">
       <div className="max-w-lg mx-auto px-4 py-16">
         <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-2xl mb-6">
-            <Wallet className="w-10 h-10" />
+          <div className="flex justify-center mb-6">
+            <div className="w-28 h-28 rounded-2xl flex items-center justify-center overflow-hidden border-2 border-piri-cashapp bg-piri-cream shadow-lg">
+              <img
+                src={LOGO_SRC}
+                alt="Piri"
+                className="w-full h-full object-cover object-top"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = 'none';
+                  const next = (e.target as HTMLImageElement).nextElementSibling;
+                  if (next) (next as HTMLElement).classList.remove('hidden');
+                }}
+              />
+              {/* placeholder only when image fails: "P" for Piri, not emoji */}
+              <span className="hidden piri-heading text-4xl font-black text-piri-cashapp" aria-hidden>P</span>
+            </div>
           </div>
-          <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
-            FU Pay Me
-          </h1>
-          <p className="text-xl text-gray-300 mb-2">
-            one QR code. crypto & fiat.
-          </p>
-          <p className="text-gray-500">
-            add crypto wallets and any payment apps — one link, get paid anywhere
-          </p>
+          <h1 className="piri-heading text-5xl font-black mb-3">Piri</h1>
+          <p className="text-xl font-bold mb-1 text-piri">Pick your flavor. Get your money.</p>
+          <p className="text-sm piri-muted">one scan, every way to pay · la piragua del pueblo</p>
         </div>
 
         <div className="space-y-4 max-w-sm mx-auto">
           {hasProfile ? (
             <>
-              <button
-                onClick={onViewProfile}
-                className="w-full p-6 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center gap-3 font-semibold text-lg hover:opacity-90 transition-opacity"
-              >
+              <button onClick={onViewProfile} className="w-full p-6 flex items-center justify-center gap-3 text-lg piri-btn-primary">
                 <QrCode className="w-6 h-6" />
                 View My QR Code
               </button>
-              <button
-                onClick={onCreateProfile}
-                className="w-full p-4 bg-slate-800/60 hover:bg-slate-700/60 border border-slate-700 rounded-xl flex items-center justify-center gap-2 text-gray-300 transition-colors"
-              >
+              <button onClick={onCreateProfile} className="w-full p-4 flex items-center justify-center gap-2 piri-btn-secondary">
                 <Plus className="w-5 h-5" />
                 Edit payment methods
               </button>
             </>
           ) : (
-            <button
-              onClick={onCreateProfile}
-              className="w-full p-6 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center gap-3 font-semibold text-lg hover:opacity-90 transition-opacity"
-            >
+            <button onClick={onCreateProfile} className="w-full p-6 flex items-center justify-center gap-3 text-lg piri-btn-primary">
               <Plus className="w-6 h-6" />
               Get Started
             </button>
@@ -55,25 +56,11 @@ export default function HomePage({ onCreateProfile, onViewProfile, hasProfile }:
         </div>
 
         <div className="mt-12 text-center">
-          <p className="text-xs text-gray-500">
-            Made with <span className="text-blue-500">💙</span> for{' '}
-            <a
-              href="https://x.com/homebasedotlove"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-400 hover:underline"
-            >
-              Home Base
-            </a>
+          <p className="text-xs piri-muted">
+            Made with <span aria-label="love">🍧</span> for{' '}
+            <a href="https://x.com/homebasedotlove" target="_blank" rel="noopener noreferrer" className="piri-link">Home Base</a>
             {' · ETH Denver 2026 · '}
-            <a
-              href="https://x.com/adigitaltati"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-400 hover:underline"
-            >
-              @adigitaltati
-            </a>
+            <a href="https://x.com/adigitaltati" target="_blank" rel="noopener noreferrer" className="piri-link">@adigitaltati</a>
           </p>
         </div>
       </div>

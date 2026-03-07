@@ -5,8 +5,9 @@ import { useConnectModal } from '@rainbow-me/rainbowkit';
 import { mainnet } from 'wagmi/chains';
 import type { EIP1193Provider } from 'viem';
 import { parseEther, parseUnits, erc20Abi, Address } from 'viem';
-import { ArrowLeft, Wallet, CheckCircle2, Loader2, AlertCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Loader2, AlertCircle, XCircle } from 'lucide-react';
 import { POPULAR_TOKENS, TokenConfig } from '../lib/popularTokens';
+import ChainLogo from './ChainLogo';
 
 interface EthereumTipProps {
   onBack: () => void;
@@ -18,6 +19,7 @@ export default function EthereumTip({ onBack, receivingAddress }: EthereumTipPro
   const [amount, setAmount] = useState('');
   const [showWalletSelector, setShowWalletSelector] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [transactionCancelled, setTransactionCancelled] = useState(false);
   const [isDirectSending, setIsDirectSending] = useState(false);
   // Ethereum wallet hooks
   const { address: ethAddress, isConnected: isEthConnected, chain } = useAccount();
@@ -90,6 +92,18 @@ export default function EthereumTip({ onBack, receivingAddress }: EthereumTipPro
     if (!isEthConnected || !actualChainId) return false;
     return actualChainId !== expectedChain.id;
   }, [isEthConnected, actualChainId, expectedChain.id]);
+
+  const isUserRejection = useCallback((msg: string, code?: number) => {
+    const m = msg.toLowerCase();
+    return m.includes('user rejected') || m.includes('rejected the request') || m.includes('user denied') ||
+      m.includes('cancelled') || m.includes('canceled') || m.includes('action_rejected') || code === 4001;
+  }, []);
+
+  const handleStartOver = useCallback(() => {
+    setTransactionCancelled(false);
+    setError(null);
+    resetContract();
+  }, [resetContract]);
   
   const isSending = isContractSending || isDirectSending;
   const isConfirming = isEthConfirming || isContractConfirming;
@@ -128,14 +142,12 @@ export default function EthereumTip({ onBack, receivingAddress }: EthereumTipPro
       if (errorMessage.includes('insufficient funds') || errorMessage.includes('insufficient balance')) {
         return 'Insufficient balance. Please ensure you have enough tokens to cover the transaction amount and gas fees.';
       }
-      if (errorMessage.includes('user rejected')) {
-        return null; // Don't show error for user rejection
-      }
+      if (isUserRejection(errorMessage)) return null;
       return errorMessage;
     }
     
     return null;
-  }, [error, contractError, balance]);
+  }, [error, contractError, balance, isUserRejection]);
   
   // Generate explorer URL
   const explorerUrl = useMemo(() => {
@@ -154,9 +166,10 @@ export default function EthereumTip({ onBack, receivingAddress }: EthereumTipPro
     
     if (contractError) {
       const errorMessage = contractError?.message || contractError?.toString() || 'Transaction failed';
-      if (!errorMessage.toLowerCase().includes('user rejected') && 
-          !errorMessage.toLowerCase().includes('rejected the request') &&
-          !errorMessage.toLowerCase().includes('user denied')) {
+      if (isUserRejection(errorMessage)) {
+        setTransactionCancelled(true);
+        setError(null);
+      } else {
         setError(errorMessage);
       }
       
@@ -165,7 +178,7 @@ export default function EthereumTip({ onBack, receivingAddress }: EthereumTipPro
       }, 3000);
       return () => clearTimeout(timer);
     }
-  }, [contractError, resetContract, isDirectSending]);
+  }, [contractError, resetContract, isDirectSending, isUserRejection]);
   
   // Switch to correct network
   const handleSwitchNetwork = useCallback(async () => {
@@ -388,19 +401,15 @@ export default function EthereumTip({ onBack, receivingAddress }: EthereumTipPro
               if ('code' in errorObj) errorCode = Number(errorObj.code);
             }
             
-            const isUserRejection = 
-              errorMessage.toLowerCase().includes('user rejected') ||
-              errorMessage.toLowerCase().includes('user denied') ||
-              errorCode === 4001;
-            
-            if (!isUserRejection) {
+            if (isUserRejection(errorMessage, errorCode)) {
+              setTransactionCancelled(true);
+              setError(null);
+            } else {
               if (errorCode === -32603 || errorMessage.includes('Internal JSON-RPC error')) {
                 setError(`MetaMask RPC Error: ${errorMessage}\n\nThis usually means MetaMask's RPC endpoint is having issues. Try:\n1. Refreshing the page\n2. Switching networks in MetaMask and switching back\n3. Checking MetaMask → Settings → Networks → Sepolia → RPC URL\n4. Resetting MetaMask account (Settings → Advanced → Reset Account)`);
               } else {
                 setError(errorMessage);
               }
-            } else {
-              setError(null);
             }
           }
         }
@@ -422,7 +431,7 @@ export default function EthereumTip({ onBack, receivingAddress }: EthereumTipPro
       console.error('Transaction error:', err);
       setError('Transaction failed. Please try again.');
     }
-  }, [amount, ethAddress, networkMismatch, actualChainId, expectedChain, receivingAddress, selectedToken, writeContract, lastNetworkSwitchTime]);
+  }, [amount, ethAddress, networkMismatch, actualChainId, expectedChain, receivingAddress, selectedToken, writeContract, lastNetworkSwitchTime, isUserRejection]);
 
   // Auto-send when wallet connects
   useEffect(() => {
@@ -444,6 +453,7 @@ export default function EthereumTip({ onBack, receivingAddress }: EthereumTipPro
     }
 
     setError(null);
+    setTransactionCancelled(false);
 
     if (isEthConnected) {
       handleSendTip();
@@ -456,23 +466,23 @@ export default function EthereumTip({ onBack, receivingAddress }: EthereumTipPro
   const tokens = POPULAR_TOKENS.ethereum;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white">
+    <div className="piri-page">
       <div className="max-w-2xl mx-auto px-4 py-12">
         <button
           onClick={onBack}
-          className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors mb-8"
+          className="flex items-center gap-2 font-semibold text-piri transition-opacity hover:opacity-70 mb-8"
         >
           <ArrowLeft className="w-5 h-5" />
           Back
         </button>
 
-        <div className="bg-slate-800/50 backdrop-blur-lg rounded-3xl p-8 border border-slate-700/50 shadow-2xl">
+        <div className="rounded-3xl p-8 border-2 border-piri-ethereum piri-card-ethereum shadow-xl backdrop-blur-sm">
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl mb-4">
-              <Wallet className="w-8 h-8" />
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl border-2 border-piri-ethereum bg-piri-ethereum/20 mb-4 shadow-sm">
+              <ChainLogo chain="ethereum" size={40} />
             </div>
-            <h2 className="text-3xl font-bold mb-2">Ethereum</h2>
-            <p className="text-gray-400">Your payment address is pre-filled automatically</p>
+            <h2 className="piri-heading text-3xl font-black mb-2">Ethereum</h2>
+            <p className="text-sm piri-muted font-semibold">Your payment address is pre-filled automatically</p>
           </div>
 
           {!isSuccess ? (
@@ -488,7 +498,7 @@ export default function EthereumTip({ onBack, receivingAddress }: EthereumTipPro
                       <button
                         key={token.symbol}
                         onClick={() => setSelectedToken(token)}
-                        className="w-full py-4 px-6 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 rounded-xl font-semibold text-lg transition-all duration-300 hover:scale-105 flex items-center justify-center gap-2"
+                        className="w-full py-4 px-6 rounded-xl font-bold text-lg transition-all duration-300 hover:scale-105 flex items-center justify-center gap-2 bg-piri-ethereum text-white hover:opacity-90"
                       >
                         {token.symbol} - {token.name}
                       </button>
@@ -497,7 +507,7 @@ export default function EthereumTip({ onBack, receivingAddress }: EthereumTipPro
                       <button
                         key={token.contractAddress}
                         onClick={() => setSelectedToken(token)}
-                        className="w-full py-3 px-6 bg-slate-700/50 hover:bg-slate-700 rounded-xl font-semibold transition-all duration-300 hover:scale-105 flex items-center justify-center gap-2"
+                        className="w-full py-3 px-6 rounded-xl font-semibold transition-all duration-300 hover:scale-105 flex items-center justify-center gap-2 piri-btn-secondary"
                       >
                         {token.symbol} - {token.name}
                       </button>
@@ -514,7 +524,7 @@ export default function EthereumTip({ onBack, receivingAddress }: EthereumTipPro
                         <p className="text-xl font-bold">{selectedToken.symbol} - {selectedToken.name}</p>
                       </div>
                       <button
-                        onClick={() => setSelectedToken(null)}
+                        onClick={() => { setSelectedToken(null); setTransactionCancelled(false); }}
                         className="text-sm text-gray-400 hover:text-white transition-colors"
                       >
                         Change
@@ -535,6 +545,7 @@ export default function EthereumTip({ onBack, receivingAddress }: EthereumTipPro
                       onChange={(e) => {
                         setAmount(e.target.value);
                         setError(null);
+                        setTransactionCancelled(false);
                       }}
                       placeholder="0.00"
                       disabled={isSending || isConfirming}
@@ -554,6 +565,7 @@ export default function EthereumTip({ onBack, receivingAddress }: EthereumTipPro
                         onClick={() => {
                           setAmount(amt);
                           setError(null);
+                          setTransactionCancelled(false);
                         }}
                         disabled={isSending || isConfirming}
                         className="py-2 px-3 bg-slate-700/50 hover:bg-slate-700 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
@@ -652,8 +664,34 @@ export default function EthereumTip({ onBack, receivingAddress }: EthereumTipPro
                 </div>
               )}
 
+              {transactionCancelled && (
+                <div className="flex flex-col gap-4 p-6 bg-amber-500/10 border border-amber-500/40 rounded-2xl">
+                  <div className="flex items-start gap-3">
+                    <XCircle className="w-6 h-6 text-amber-500 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-semibold text-amber-700 dark:text-amber-400">Transaction cancelled</p>
+                      <p className="text-sm text-amber-600/90 dark:text-amber-300/80 mt-1">No worries — your funds are safe. You can try again whenever you&apos;re ready.</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-3">
+                    <button
+                      onClick={handleStartOver}
+                      className="px-4 py-2 bg-piri text-white font-semibold rounded-xl hover:opacity-90 transition-opacity"
+                    >
+                      Start over
+                    </button>
+                    <button
+                      onClick={onBack}
+                      className="px-4 py-2 bg-slate-600 hover:bg-slate-500 text-white font-semibold rounded-xl transition-colors"
+                    >
+                      Go back
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Error messages */}
-              {formattedError && !networkMismatch && (
+              {formattedError && !networkMismatch && !transactionCancelled && (
                 <div className="flex items-start gap-2 p-4 bg-red-500/10 border border-red-500/50 rounded-xl text-red-400">
                   <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
                   <div className="flex-1">
@@ -664,7 +702,7 @@ export default function EthereumTip({ onBack, receivingAddress }: EthereumTipPro
               )}
 
               {/* Send button */}
-              {selectedToken && !showWalletSelector && (
+              {selectedToken && !showWalletSelector && !transactionCancelled && (
                 <button
                   onClick={handleTipClick}
                   disabled={!amount || isSending || isConfirming || networkMismatch || isSwitchingNetwork}
