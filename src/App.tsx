@@ -11,8 +11,12 @@ import ProfileCreation from './components/ProfileCreation';
 import ProfileView from './components/ProfileView';
 import { UserProfile } from './components/ProfileCreation';
 import { decodeProfileFromUrl } from './lib/profileUrl';
+import BrandPage from './components/BrandPage';
 
 const queryClient = new QueryClient();
+
+// secret brand page — no links from main site; access via /x-piri-brand
+const BRAND_PATH = '/x-piri-brand';
 
 type Page = 'home' | 'create' | 'view';
 
@@ -35,8 +39,14 @@ function App() {
     }
   }, []);
 
-  // if we're on a payment page, show payer experience
   const path = window.location.pathname;
+
+  // secret brand page (no links from main site)
+  if (path === BRAND_PATH) {
+    return <BrandPage />;
+  }
+
+  // if we're on a payment page, show payer experience
   if (path.startsWith('/tip/')) {
     const encodedProfile = path.replace(/^\/tip\//, '').split('/')[0];
     try {

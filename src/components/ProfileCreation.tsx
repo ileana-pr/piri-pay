@@ -75,18 +75,20 @@ export default function ProfileCreation({ onSave, onBack, initialProfile }: Prof
     setResolveError(null);
 
     try {
-      if (domain.endsWith('.eth')) {
-        const address = await ensClient.getEnsAddress({ name: normalize(domain) });
-        if (!address) throw new Error('no address found for this ENS name');
-        setResolvedAddress(address);
-      } else if (domain.endsWith('.base')) {
-        const name = domain.replace(/\.base$/i, '');
+      // .base and .base.eth: use basename API (avoids mainnet ENS timeout for Base subdomains)
+      if (domain.endsWith('.base.eth') || domain.endsWith('.base') || domain.includes('.base')) {
+        const name = domain.replace(/\.base\.eth$/i, '').replace(/\.base$/i, '').trim();
+        if (!name) throw new Error('invalid .base name');
         const res = await fetch(`https://api.basename.app/v1/names/${encodeURIComponent(name)}`);
         if (!res.ok) throw new Error('could not resolve .base name');
         const data = await res.json();
         const addr = data?.address ?? data?.owner ?? data?.eth_address;
         if (!addr) throw new Error('no address found for this .base name');
         setResolvedAddress(addr);
+      } else if (domain.endsWith('.eth')) {
+        const address = await ensClient.getEnsAddress({ name: normalize(domain) });
+        if (!address) throw new Error('no address found for this ENS name');
+        setResolvedAddress(address);
       } else if (domain.endsWith('.sol')) {
         const res = await fetch(`https://sns-sdk-proxy.bonfida.workers.dev/resolve/${domain.replace('.sol', '')}`);
         if (!res.ok) throw new Error('could not resolve .sol domain');
@@ -298,7 +300,7 @@ export default function ProfileCreation({ onSave, onBack, initialProfile }: Prof
             {editingChain !== 'bitcoin' && isDomainName(manualAddress) && !resolvedAddress ? (
               <button onClick={() => resolveDomain(manualAddress.trim().toLowerCase())} disabled={isResolving}
                 className="w-full py-4 rounded-xl font-bold text-lg piri-btn-primary disabled:opacity-60 hover:opacity-90 transition-opacity flex items-center justify-center gap-2">
-                {isResolving ? <><Loader2 className="w-5 h-5 animate-spin" /> Resolving...</> : <>Resolve {manualAddress.trim().toLowerCase().endsWith('.eth') ? 'ENS' : manualAddress.trim().toLowerCase().endsWith('.base') ? '.base' : '.sol'} Name</>}
+                {isResolving ? <><Loader2 className="w-5 h-5 animate-spin" /> Resolving...</> : <>Resolve {(manualAddress.trim().toLowerCase().includes('.base') || manualAddress.trim().toLowerCase().endsWith('.base')) ? '.base' : manualAddress.trim().toLowerCase().endsWith('.eth') ? 'ENS' : '.sol'} Name</>}
               </button>
             ) : (
               <button onClick={handleSaveAddress} disabled={!manualAddress.trim() && !resolvedAddress}

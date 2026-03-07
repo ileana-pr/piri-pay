@@ -3,19 +3,15 @@
 </div>
 
 <div align="center" style="font-family: system-ui, sans-serif; color: #2D0A00; background: #FFFBF2; padding: 0.75rem 1.5rem; border-radius: 0.75rem; margin: 0.5rem 0; border: 2px solid #2D0A00;">
-  <strong>🍧 Pick your flavor. Get your money.</strong><br/>
+  <strong> Pick your flavor. Get your money.</strong><br/>
   <span style="opacity: 0.85;">One QR code, every way to pay—unify fiat and crypto in a single link.</span>
 </div>
 
 # 🍧 Piri
 
 <div align="center">
-  <a href="https://piri.vercel.app" target="_blank" rel="noopener noreferrer" style="display: inline-block; padding: 0.6rem 1.5rem; font-size: 1.1rem; font-weight: bold; color: #fff; background: #10B981; border-radius: 0.5rem; text-decoration: none; margin-bottom: 1rem;">▶ Try the live demo</a>
+  <a href="https://piri.vercel.app" target="_blank" rel="noopener noreferrer" style="display: inline-block; padding: 0.8rem 1.5rem; font-size: 1.1rem; font-weight: bold; color: #fff; background: #10B981; border-radius: 0.8rem; text-decoration: none; margin-bottom: .3rem; margin-top: 2rem;">▶ Try the live demo</a>
 </div>
-
-[![React](https://img.shields.io/badge/React-18.3.1-61DAFB?logo=react)](https://react.dev/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.5-3178C6?logo=typescript)](https://www.typescriptlang.org/)
-[![Vite](https://img.shields.io/badge/Vite-5.4-646CFF?logo=vite)](https://vitejs.dev/)
 
 ## 📚 Docs
 
