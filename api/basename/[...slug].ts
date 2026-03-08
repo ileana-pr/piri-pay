@@ -1,13 +1,13 @@
 // proxy for basename API — avoids CORS (api.basename.app blocks browser requests)
 export default async function handler(
-  req: { method?: string; url?: string; query?: { name?: string } },
+  req: { method?: string; query?: { slug?: string[] }; url?: string },
   res: { setHeader: (k: string, v: string) => void; status: (n: number) => { json: (d: unknown) => void }; json: (d: unknown) => void }
 ) {
   if (req.method !== 'GET') {
     res.setHeader('Access-Control-Allow-Methods', 'GET');
     return res.status(405).json({ error: 'Method not allowed' });
   }
-  let name = req.query?.name;
+  let name: string | undefined = req.query?.slug?.[0];
   if (!name && req.url) {
     const match = req.url.match(/\/api\/basename\/([^/?]+)/);
     name = match ? decodeURIComponent(match[1]) : undefined;
@@ -18,9 +18,18 @@ export default async function handler(
   try {
     const response = await fetch(
       `https://api.basename.app/v1/names/${encodeURIComponent(name)}`,
-      { headers: { Accept: 'application/json' } }
+      {
+        headers: { Accept: 'application/json', 'User-Agent': 'Piri/1.0' },
+        redirect: 'follow',
+      }
     );
-    const data = await response.json();
+    const text = await response.text();
+    let data: unknown;
+    try {
+      data = text ? JSON.parse(text) : {};
+    } catch {
+      return res.status(502).json({ error: 'Invalid response from basename API' });
+    }
     if (!response.ok) {
       return res.status(response.status).json(data);
     }

@@ -78,16 +78,32 @@ export default function ProfileCreation({ onSave, onBack, initialProfile }: Prof
     setResolveError(null);
 
     try {
-      // .base and .base.eth: use proxy (avoids CORS — api.basename.app blocks direct browser requests)
+      // .base and .base.eth: try proxy first, fall back to ENS
       if (domain.endsWith('.base.eth') || domain.endsWith('.base') || domain.includes('.base')) {
         const name = domain.replace(/\.base\.eth$/i, '').replace(/\.base$/i, '').trim();
         if (!name) throw new Error('invalid .base name');
-        const res = await fetch(`/api/basename/${encodeURIComponent(name)}`);
-        if (!res.ok) throw new Error('could not resolve .base name');
-        const data = await res.json();
-        const addr = data?.address ?? data?.owner ?? data?.eth_address;
-        if (!addr) throw new Error('no address found for this .base name');
-        setResolvedAddress(addr);
+        try {
+          const res = await fetch(`/api/basename/${encodeURIComponent(name)}`);
+          if (res.ok) {
+            const data = await res.json();
+            const addr = data?.address ?? data?.owner ?? data?.eth_address;
+            if (addr) {
+              setResolvedAddress(addr);
+              return;
+            }
+          }
+        } catch {
+          /* fall through to ENS */
+        }
+        // fallback: .base.eth is an ENS subdomain, try mainnet ENS
+        if (domain.endsWith('.base.eth')) {
+          const address = await ensClient.getEnsAddress({ name: normalize(domain) });
+          if (address) {
+            setResolvedAddress(address);
+            return;
+          }
+        }
+        throw new Error('could not resolve .base name');
       } else if (domain.endsWith('.eth')) {
         const address = await ensClient.getEnsAddress({ name: normalize(domain) });
         if (!address) throw new Error('no address found for this ENS name');
