@@ -1,10 +1,9 @@
 <div align="center">
-  <img src="public/logo/piri.png" alt="Piri" width="120" />
+  <img src="public/og-image.png" alt="Piri" width="500" />
 </div>
 
 <div align="center" style="font-family: system-ui, sans-serif; color: #2D0A00; background: #FFFBF2; padding: 0.75rem 1.5rem; border-radius: 0.75rem; margin: 0.5rem 0; border: 2px solid #2D0A00;">
-  <strong> Pick your flavor. Get your money.</strong><br/>
-  <span style="opacity: 0.85;">One QR code, every way to pay—unify fiat and crypto in a single link.</span>
+  <span style="opacity: 0.85; font-weight: bold;">One QR code, every way to pay—unify fiat and crypto in a single link.</span>
 </div>
 
 # 🍧 Piri
