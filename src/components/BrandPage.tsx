@@ -2,16 +2,22 @@ import { useState } from 'react';
 
 const MASCOT = '/logo/piri.png';
 
+/* flavors = payment methods; order matches app payment options where possible */
 const FLAVORS = [
-  { name: 'Fresa', color: '#FF6B9D', emoji: '🩷', method: 'Cash App', hex: '#FF6B9D' },
-  { name: 'Tamarindo', color: '#FF9A3C', emoji: '🟠', method: 'Venmo', hex: '#FF9A3C' },
-  { name: 'Limón', color: '#F5D800', emoji: '💛', method: 'Zelle', hex: '#F5D800' },
-  { name: 'Coco', color: '#7BC8F5', emoji: '🩵', method: 'Ethereum', hex: '#7BC8F5' },
-  { name: 'Parcha', color: '#B8E87A', emoji: '💚', method: 'Solana', hex: '#B8E87A' },
-  { name: 'Uva', color: '#C97BF5', emoji: '💜', method: 'Bitcoin', hex: '#C97BF5' },
+  { name: 'Fresa', color: '#FF6B9D', emoji: '🩷', method: 'Ethereum', hex: '#FF6B9D' },
+  { name: 'China', color: '#F59E0B', emoji: '🍊', method: 'Bitcoin', hex: '#F59E0B' },
+  { name: 'Guayaba', color: '#86198F', emoji: '💜', method: 'Solana', hex: '#86198F' },
+  { name: 'Coco', color: '#7BC8F5', emoji: '🩵', method: 'Base', hex: '#7BC8F5' },
+  { name: 'Lima limón', color: '#10B981', emoji: '💚', method: 'Cash App', hex: '#10B981' },
+  { name: 'Frambuesa azul', color: '#0EA5E9', emoji: '🫐', method: 'Venmo', hex: '#0EA5E9' },
+  { name: 'Uva', color: '#C97BF5', emoji: '🍇', method: 'Zelle', hex: '#C97BF5' },
+  { name: 'Tamarindo', color: '#FF9A3C', emoji: '🟠', method: '—', hex: '#FF9A3C' },
+  { name: 'Parcha', color: '#84CC16', emoji: '🍈', method: '—', hex: '#84CC16' },
+  { name: 'Piña', color: '#FBBF24', emoji: '🍍', method: '—', hex: '#FBBF24' },
+  { name: 'Cereza', color: '#E11D48', emoji: '🍒', method: '—', hex: '#E11D48' },
 ];
 
-const Section = ({ title, children, accent = '#FF6B9D' }: { title: string; children: React.ReactNode; accent?: string }) => (
+const Section = ({ title, children, accent = '#14B8A6' }: { title: string; children: React.ReactNode; accent?: string }) => (
   <div className="rounded-3xl p-6 border-2" style={{ background: `${accent}0D`, borderColor: `${accent}40` }}>
     <h2 className="text-2xl font-black mb-4" style={{ color: '#2D0A00', fontFamily: "'Fredoka One', cursive" }}>{title}</h2>
     {children}
@@ -51,20 +57,20 @@ export default function BrandPage() {
 
       {/* ── HEADER ── */}
       <div className="text-center mb-10">
-        <p className="text-xs font-black uppercase tracking-widest mb-1" style={{ color: '#FF6B9D' }}>
-          Brand Identity · Final
+        <p className="text-xs font-black uppercase tracking-widest mb-1" style={{ color: '#14B8A6' }}>
+          Brand Identity 
         </p>
         <h1 className="text-6xl md:text-8xl font-black leading-none" style={{ color: '#2D0A00', fontFamily: "'Fredoka One', cursive" }}>
           Piri
         </h1>
         <p className="text-base font-bold mt-1 opacity-50" style={{ color: '#2D0A00' }}>
-          La piragua del pueblo · One scan, every flavor 🇵🇷
+          One scan, every flavor
         </p>
       </div>
 
       {/* ── HERO: mascot + name lockup ── */}
       <div className="max-w-5xl mx-auto mb-10">
-        <div className="rounded-3xl overflow-hidden shadow-2xl border-4 grid md:grid-cols-2" style={{ borderColor: '#FF6B9D' }}>
+        <div className="rounded-3xl overflow-hidden shadow-2xl border-4 grid md:grid-cols-2" style={{ borderColor: '#14B8A6' }}>
           <div className="flex items-center justify-center p-8" style={{ background: '#FFF0D6' }}>
             <div className="relative w-64 h-64 overflow-hidden">
               <img
@@ -75,11 +81,11 @@ export default function BrandPage() {
               />
             </div>
           </div>
-          <div className="flex flex-col justify-center p-8 gap-5" style={{ background: '#FF6B9D' }}>
+          <div className="flex flex-col justify-center p-8 gap-5" style={{ background: '#14B8A6' }}>
             <div>
               <p className="text-white/70 text-xs font-black uppercase tracking-widest mb-1">Meet</p>
               <h2 className="text-7xl font-black text-white leading-none" style={{ fontFamily: "'Fredoka One', cursive" }}>Piri</h2>
-              <p className="text-white/80 text-base font-bold mt-2">La piragua del pueblo.</p>
+              <p className="text-white/80 text-base font-bold mt-2">La piragua del pueblo — one scan, every way to pay.</p>
               <p className="text-white/60 text-sm mt-1 leading-relaxed">
                 A payment app so sweet, people fall in love with the brand before they even open the QR.
               </p>
@@ -103,7 +109,7 @@ export default function BrandPage() {
               onClick={() => setTab(t.id)}
               className="px-5 py-2 rounded-full font-black text-sm border-2 transition-all"
               style={{
-                background: tab === t.id ? '#FF6B9D' : 'white',
+                background: tab === t.id ? '#14B8A6' : 'white',
                 color: tab === t.id ? 'white' : '#2D0A00',
                 borderColor: tab === t.id ? '#2D0A00' : '#2D0A0020',
               }}
@@ -115,12 +121,12 @@ export default function BrandPage() {
 
         {tab === 'identity' && (
           <div className="grid md:grid-cols-2 gap-6">
-            <Section title="The Story" accent="#FF6B9D">
+            <Section title="The Story" accent="#14B8A6">
               <div className="flex flex-col gap-3 text-sm leading-relaxed" style={{ color: '#2D0A00' }}>
                 <p>🏙️ <strong>Origin:</strong> Piri grew up on the corner of every barrio, watching vendors juggle Cash App, Venmo, three crypto wallets, and a prayer. Ridiculous.</p>
                 <p>🍧 <strong>Mission:</strong> Every payment method is a flavor. One scan. Pick yours. No drama.</p>
                 <p>🌈 <strong>Personality:</strong> Colorful, joyful, the life of the block. Sweet but never soft — Piri will advocate for you getting every coin you&apos;re owed.</p>
-                <p>🇵🇷 <strong>Soul:</strong> Like the piragüero&apos;s cart — humble setup, but you&apos;d walk across town for it.</p>
+                <p>🌴 <strong>Soul:</strong> Like the piragüero&apos;s cart — humble setup, but you&apos;d walk across town for it.</p>
               </div>
             </Section>
             <Section title="Typography & Logo" accent="#FF9A3C">
@@ -163,7 +169,7 @@ export default function BrandPage() {
 
         {tab === 'flavors' && (
           <div className="grid gap-6">
-            <Section title="Flavors = Payment Methods" accent="#FF6B9D">
+            <Section title="Flavors = Payment Methods" accent="#14B8A6">
               <p className="text-sm mb-5 opacity-60" style={{ color: '#2D0A00' }}>
                 Each syrup flavor maps to a payment rail. Add a payment method in the app → unlock that flavor. The more methods, the more colorful Piri gets.
               </p>
@@ -182,17 +188,17 @@ export default function BrandPage() {
             </Section>
             <Section title="The Rainbow Goal 🌈" accent="#C97BF5">
               <p className="text-sm leading-relaxed" style={{ color: '#2D0A00' }}>
-                The ultimate gamification hook: <strong>connect all 6 payment methods = unlock Rainbow Piri.</strong> All layers lit up, cherry glowing, special animation plays. This is the app&apos;s north star engagement mechanic — visible on your profile so payees can see how &quot;stacked&quot; your Piri is.
+                The ultimate gamification hook: <strong>connect all 7 payment methods = unlock Rainbow Piri.</strong> All layers lit up, cherry glowing, special animation plays. This is the app&apos;s north star engagement mechanic — visible on your profile so payees can see how &quot;stacked&quot; your Piri is.
               </p>
               <div className="mt-4 flex justify-center">
                 <div className="flex gap-1">
                   {FLAVORS.map((f) => (
                     <div key={f.name} className="w-8 h-8 rounded-full shadow-md border-2 border-white" style={{ background: f.color }} />
                   ))}
-                  <div className="w-8 h-8 rounded-full shadow-md border-2 border-white ml-1" style={{ background: 'linear-gradient(135deg, #FF6B9D, #FF9A3C, #FFE566, #7BC8F5, #B8E87A, #C97BF5)' }} />
+                  <div className="w-8 h-8 rounded-full shadow-md border-2 border-white ml-1" style={{ background: 'linear-gradient(135deg, #FF6B9D, #F59E0B, #C97BF5, #7BC8F5, #10B981, #0EA5E9, #86198F, #FF9A3C, #84CC16, #FBBF24, #E11D48)' }} />
                 </div>
               </div>
-              <p className="text-xs text-center mt-2 opacity-40" style={{ color: '#2D0A00' }}>6 flavors → Rainbow Piri ✨</p>
+              <p className="text-xs text-center mt-2 opacity-40" style={{ color: '#2D0A00' }}>7 flavors → Rainbow Piri ✨</p>
             </Section>
           </div>
         )}
@@ -201,21 +207,21 @@ export default function BrandPage() {
           <div className="grid md:grid-cols-2 gap-6">
             <Section title="Taglines" accent="#FF9A3C">
               <div className="flex flex-col gap-3">
-                <Tag text="Pick your flavor. Get your money." sub="Hero tagline — action + street energy" accent="#FF9A3C" />
-                <Tag text="La piragua del pueblo." sub="Spanish-first — cultural pride" accent="#FF6B9D" />
+                <Tag text="Pick your flavors. Get paid." sub="Hero tagline — action + street energy" accent="#FF9A3C" />
+                <Tag text="La piragua del pueblo — one scan, every way to pay." sub="Spanish-first · payment in your flavor" accent="#14B8A6" />
                 <Tag text="One scan. Every way to pay." sub="Feature-forward, clean" accent="#7BC8F5" />
                 <Tag text="Sweet payments. No drama." sub="Gen Z / creator audience" accent="#B8E87A" />
                 <Tag text="Know your worth. Piri's got your back." sub="Nods to the origin story" accent="#C97BF5" />
               </div>
             </Section>
-            <Section title="Notification Voice" accent="#FF6B9D">
+            <Section title="Notification Voice" accent="#14B8A6">
               <div className="flex flex-col gap-3">
                 <Notif emoji="🍧" text="¡Qué rico! Maria paid you $40 USDC" sub="just now · tap to view" bg="#FF9A3C" />
                 <Notif emoji="🌈" text="Coco unlocked! You added an ETH address 🩵" sub="New flavor activated" bg="#7BC8F5CC" />
-                <Notif emoji="🎉" text="Rainbow Piri achieved! All 6 flavors active!" sub="You're fully stacked ✨" bg="#C97BF5" />
-                <Notif emoji="📊" text="Piri says: Tuesday is your best day 👀" sub="Check your flavor breakdown" bg="#FF6B9D" />
+                <Notif emoji="🎉" text="Rainbow Piri achieved! All 7 flavors active!" sub="You're fully stacked ✨" bg="#C97BF5" />
+                <Notif emoji="📊" text="Piri says: Tuesday is your best day 👀" sub="Check your flavor breakdown" bg="#14B8A6" />
               </div>
-              <div className="mt-4 rounded-2xl p-3 border-2" style={{ borderColor: '#FF6B9D40', background: '#FF6B9D08' }}>
+              <div className="mt-4 rounded-2xl p-3 border-2" style={{ borderColor: '#14B8A640', background: '#14B8A608' }}>
                 <p className="text-xs font-black mb-1" style={{ color: '#2D0A00' }}>Voice rules</p>
                 <p className="text-xs opacity-60" style={{ color: '#2D0A00' }}>Warm · celebratory · bilingual (Spanglish ok) · never corporate · always on Piri&apos;s side</p>
               </div>
@@ -225,17 +231,17 @@ export default function BrandPage() {
 
         {tab === 'universe' && (
           <div className="grid md:grid-cols-2 gap-6">
-            <Section title="🧸 Merch Lineup" accent="#FF6B9D">
+            <Section title="🧸 Merch Lineup" accent="#14B8A6">
               <ul className="flex flex-col gap-2 text-sm" style={{ color: '#2D0A00' }}>
                 {[
                   ['🧸', 'Piri plushie', 'Cup-shaped, squishy, layered fabric. First merch drop.'],
                   ['🔑', 'Enamel keychain', 'NFC chip inside — tap to open your Piri QR instantly.'],
                   ['📦', 'Die-cut sticker pack', 'One Piri per mood/flavor. Waterproof.'],
-                  ['👕', 'Screen print tee', "'Pick your flavor' — barrio drop, limited colorways."],
+                  ['👕', 'Screen print tee', "'Pick your flavors' — barrio drop, limited colorways."],
                   ['🧢', 'Embroidered cap', 'Piri logo on chest. Flavor color brim.'],
                   ['🪡', 'Iron-on patch', 'For the denim jacket. Classic.'],
                 ].map(([e, name, desc]) => (
-                  <li key={name} className="flex gap-3 items-start rounded-xl p-2" style={{ background: '#FF6B9D0A' }}>
+                  <li key={name} className="flex gap-3 items-start rounded-xl p-2" style={{ background: '#14B8A60A' }}>
                     <span className="text-xl mt-0.5">{e}</span>
                     <div>
                       <p className="font-black text-sm" style={{ color: '#2D0A00' }}>{name}</p>
@@ -249,7 +255,7 @@ export default function BrandPage() {
               <ul className="flex flex-col gap-2 text-sm" style={{ color: '#2D0A00' }}>
                 {[
                   ['🍧', 'Add payment method', '→ unlock that flavor on your Piri'],
-                  ['🌈', 'All 6 methods active', '→ Rainbow Piri unlocked'],
+                  ['🌈', 'All 7 methods active', '→ Rainbow Piri unlocked'],
                   ['📊', 'Data viz', '→ pie/bar charts styled as piragua layers'],
                   ['🏆', 'Vendor rank', '→ Cart · Truck · Restaurant · Empire'],
                   ['✨', 'Piri moods', '→ expression changes with payment streaks'],
@@ -305,7 +311,7 @@ export default function BrandPage() {
       </div>
 
       <p className="text-center text-xs opacity-20 mt-12 pb-4" style={{ color: '#2D0A00' }}>
-        Piri · born in Puerto Rico · built for everybody 🇵🇷🍧
+        Piri · born in Puerto Rico · built for everybody 🌴🍧
       </p>
     </div>
   );

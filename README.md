@@ -12,7 +12,7 @@
 
 <div align="center">
 
-> 🍧 **[▶ Try the live demo](https://piri-pay.vercel.app/)** — *Pick your flavor. Get your money.* 🍧
+> 🍧 **[▶ Try the live demo](https://piri-pay.vercel.app/)** — *Pick your flavors. Get paid.* 🍧
 
 </div>
 

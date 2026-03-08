@@ -4,20 +4,21 @@
 @tailwind components;
 @tailwind utilities;
 
-/* piri brand — puerto rican–inspired payment app */
+/* piri brand — puerto rican–piraguero-inspired payment app */
 :root {
   /* core */
   --piri-bg: #FFFBF2;
   --piri-text: #2D0A00;
   --piri-text-muted: rgba(45, 10, 0, 0.6);
   /* flavors = payment methods (brand-aligned, Piri twist) */
-  --piri-ethereum: #FF6B9D;   /* pink */
+  --piri-ethereum: #FF6B9D;   /* pink (Fresa) */
+  --piri-menta: #14B8A6;      /* turquoise (Menta / Link) */
   --piri-base: #1D4ED8;       /* deeper blue */
   --piri-venmo: #0EA5E9;      /* classic light blue */
   --piri-bitcoin: #F59E0B;    /* amber */
-  --piri-solana: #9945FF;     /* Solana purple */
+  --piri-solana: #86198F;     /* Solana (Guayaba) */
   --piri-cashapp: #10B981;   /* green */
-  --piri-limon: #F5D800;     /* Zelle */
+  --piri-limon: #C97BF5;      /* Zelle (Uva) */
   /* typography */
   --piri-font-display: 'Fredoka One', cursive;
   --piri-font-body: 'Nunito', sans-serif;
@@ -63,9 +64,10 @@
   }
   /* flavor = payment method; card modifier per method */
   .piri-card-ethereum { background-color: rgba(255, 107, 157, 0.2); border-color: var(--piri-ethereum); }
+  .piri-card-menta { background-color: rgba(20, 184, 166, 0.2); border-color: var(--piri-menta); }
   .piri-card-base { background-color: rgba(29, 78, 216, 0.15); border-color: var(--piri-base); }
   .piri-card-venmo { background-color: rgba(14, 165, 233, 0.2); border-color: var(--piri-venmo); }
   .piri-card-bitcoin { background-color: rgba(245, 158, 11, 0.2); border-color: var(--piri-bitcoin); }
-  .piri-card-solana { background-color: rgba(153, 69, 255, 0.2); border-color: var(--piri-solana); }
+  .piri-card-solana { background-color: rgba(134, 25, 143, 0.2); border-color: var(--piri-solana); }
   .piri-card-cashapp { background-color: rgba(16, 185, 129, 0.2); border-color: var(--piri-cashapp); }
 }

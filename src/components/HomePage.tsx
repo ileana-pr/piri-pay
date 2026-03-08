@@ -31,8 +31,8 @@ export default function HomePage({ onCreateProfile, onViewProfile, hasProfile }:
             </div>
           </div>
           <h1 className="piri-heading text-5xl font-black mb-3">Piri</h1>
-          <p className="text-xl font-bold mb-1 text-piri">Pick your flavor. Get your money.</p>
-          <p className="text-sm piri-muted">one scan, every way to pay · la piragua del pueblo</p>
+          <p className="text-xl font-bold mb-1 text-piri">Pick your flavors. Get paid.</p>
+          <p className="text-sm piri-muted">la piragua del pueblo — one scan, every way to pay</p>
         </div>
 
         <div className="space-y-4 max-w-sm mx-auto">

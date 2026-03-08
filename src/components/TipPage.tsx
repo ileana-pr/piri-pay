@@ -262,7 +262,7 @@ export default function TipPage({ profile }: { profile: UserProfile }) {
       <div className="max-w-lg mx-auto px-4 py-12">
         <div className="text-center mb-10">
           <h1 className="piri-heading text-4xl font-black mb-3">Piri</h1>
-          <p className="text-xl font-bold text-piri">pick your flavor · pay with crypto or fiat</p>
+          <p className="text-xl font-bold text-piri">pick your flavors · get paid</p>
         </div>
 
         {chains.length === 0 && !cashtag && !venmoUsername ? (
