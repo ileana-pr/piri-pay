@@ -3,7 +3,6 @@ import { ArrowLeft, QrCode, Copy, Check, Pencil } from 'lucide-react';
 import QRCode from 'qrcode';
 import { UserProfile } from './ProfileCreation';
 import { encodeProfileForUrl } from '../lib/profileUrl';
-import ChainLogo from './ChainLogo';
 
 interface ProfileViewProps {
   profile: UserProfile;
@@ -78,68 +77,6 @@ export default function ProfileView({ profile, onBack, onEdit }: ProfileViewProp
               {copied === 'url' ? <><Check className="w-4 h-4" /> Copied!</> : <><Copy className="w-4 h-4" /> Copy Link</>}
             </button>
           </div>
-        </div>
-
-        <div className="space-y-3">
-          {profile.ethereumAddress && (
-            <div className="piri-card rounded-xl border-2 piri-card-ethereum flex items-center gap-3 shadow-sm">
-              <div className="w-10 h-10 rounded-xl border-2 border-piri-ethereum bg-piri-ethereum/20 flex items-center justify-center shrink-0">
-                <ChainLogo chain="ethereum" size={24} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-xs font-bold mb-1 piri-muted">Ethereum</div>
-                <code className="text-sm font-semibold break-all text-piri">{profile.ethereumAddress}</code>
-              </div>
-              <button onClick={() => copyToClipboard(profile.ethereumAddress, 'eth')} className="p-2 rounded-lg transition-opacity hover:opacity-70 shrink-0 text-piri-ethereum">
-                {copied === 'eth' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-              </button>
-            </div>
-          )}
-
-          {profile.baseAddress && (
-            <div className="piri-card rounded-xl border-2 piri-card-base flex items-center gap-3 shadow-sm">
-              <div className="w-10 h-10 rounded-xl border-2 border-piri-base bg-piri-base/20 flex items-center justify-center shrink-0">
-                <ChainLogo chain="base" size={24} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-xs font-bold mb-1 piri-muted">Base</div>
-                <code className="text-sm font-semibold break-all text-piri">{profile.baseAddress}</code>
-              </div>
-              <button onClick={() => copyToClipboard(profile.baseAddress ?? '', 'base')} className="p-2 rounded-lg transition-opacity hover:opacity-70 shrink-0 text-piri-base">
-                {copied === 'base' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-              </button>
-            </div>
-          )}
-
-          {profile.bitcoinAddress && (
-            <div className="piri-card rounded-xl border-2 piri-card-bitcoin flex items-center gap-3 shadow-sm">
-              <div className="w-10 h-10 rounded-xl border-2 border-piri-bitcoin bg-piri-bitcoin/20 flex items-center justify-center shrink-0">
-                <ChainLogo chain="bitcoin" size={24} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-xs font-bold mb-1 piri-muted">Bitcoin</div>
-                <code className="text-sm font-semibold break-all text-piri">{profile.bitcoinAddress}</code>
-              </div>
-              <button onClick={() => copyToClipboard(profile.bitcoinAddress ?? '', 'btc')} className="p-2 rounded-lg transition-opacity hover:opacity-70 shrink-0 text-piri-bitcoin">
-                {copied === 'btc' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-              </button>
-            </div>
-          )}
-
-          {profile.solanaAddress && (
-            <div className="piri-card rounded-xl border-2 piri-card-solana flex items-center gap-3 shadow-sm">
-              <div className="w-10 h-10 rounded-xl border-2 border-piri-solana bg-piri-solana/20 flex items-center justify-center shrink-0">
-                <ChainLogo chain="solana" size={24} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-xs font-bold mb-1 piri-muted">Solana</div>
-                <code className="text-sm font-semibold break-all text-piri">{profile.solanaAddress}</code>
-              </div>
-              <button onClick={() => copyToClipboard(profile.solanaAddress, 'sol')} className="p-2 rounded-lg transition-opacity hover:opacity-70 shrink-0 text-piri-solana">
-                {copied === 'sol' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-              </button>
-            </div>
-          )}
         </div>
 
         <div className="mt-12 text-center">
