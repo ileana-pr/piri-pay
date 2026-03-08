@@ -15,7 +15,7 @@ export default {
           bitcoin: '#F59E0B',
           solana: '#9945FF',
           cashapp: '#10B981',
-          limon: '#F5D800',
+          zelle: '#6D1ED4',
         },
       },
       fontFamily: {

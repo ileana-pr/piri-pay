@@ -23,6 +23,8 @@ export interface UserProfile {
   cashAppCashtag?: string;
   /** venmo username (e.g. johndoe) — opens venmo.com/username?txn=pay when tipper pays */
   venmoUsername?: string;
+  /** zelle email or phone — tipper copies and sends via bank app (no zelle deep link) */
+  zelleContact?: string;
 }
 
 interface ProfileCreationProps {
@@ -42,17 +44,18 @@ export default function ProfileCreation({ onSave, onBack, initialProfile }: Prof
     solanaAddress: initialProfile?.solanaAddress ?? '',
     cashAppCashtag: initialProfile?.cashAppCashtag ?? '',
     venmoUsername: initialProfile?.venmoUsername ?? '',
+    zelleContact: initialProfile?.zelleContact ?? '',
   });
-  const [editingChain, setEditingChain] = useState<'ethereum' | 'base' | 'bitcoin' | 'solana' | 'cashapp' | 'venmo'>('ethereum');
+  const [editingChain, setEditingChain] = useState<'ethereum' | 'base' | 'bitcoin' | 'solana' | 'cashapp' | 'venmo' | 'zelle'>('ethereum');
   const [manualAddress, setManualAddress] = useState('');
   const [isResolving, setIsResolving] = useState(false);
   const [resolvedAddress, setResolvedAddress] = useState<string | null>(null);
   const [resolveError, setResolveError] = useState<string | null>(null);
 
-  const getAddressForChain = (chain: 'ethereum' | 'base' | 'bitcoin' | 'solana' | 'cashapp' | 'venmo') =>
-    chain === 'ethereum' ? profile.ethereumAddress : chain === 'base' ? profile.baseAddress : chain === 'bitcoin' ? profile.bitcoinAddress : chain === 'solana' ? profile.solanaAddress : chain === 'cashapp' ? (profile.cashAppCashtag ?? '') : (profile.venmoUsername ?? '');
+  const getAddressForChain = (chain: 'ethereum' | 'base' | 'bitcoin' | 'solana' | 'cashapp' | 'venmo' | 'zelle') =>
+    chain === 'ethereum' ? profile.ethereumAddress : chain === 'base' ? profile.baseAddress : chain === 'bitcoin' ? profile.bitcoinAddress : chain === 'solana' ? profile.solanaAddress : chain === 'cashapp' ? (profile.cashAppCashtag ?? '') : chain === 'venmo' ? (profile.venmoUsername ?? '') : (profile.zelleContact ?? '');
 
-  const handlePickChain = (chain: 'ethereum' | 'base' | 'bitcoin' | 'solana' | 'cashapp' | 'venmo') => {
+  const handlePickChain = (chain: 'ethereum' | 'base' | 'bitcoin' | 'solana' | 'cashapp' | 'venmo' | 'zelle') => {
     setEditingChain(chain);
     setManualAddress(getAddressForChain(chain) ?? '');
     setResolvedAddress(null);
@@ -130,6 +133,16 @@ export default function ProfileCreation({ onSave, onBack, initialProfile }: Prof
       setStep('review');
       return;
     }
+    // zelle: store email or phone as-is (trimmed)
+    if (editingChain === 'zelle') {
+      if (!trimmed) return;
+      setProfile(p => ({ ...p, zelleContact: trimmed }));
+      setManualAddress('');
+      setResolvedAddress(null);
+      setResolveError(null);
+      setStep('review');
+      return;
+    }
     const looksLikeDomain = trimmed.toLowerCase().endsWith('.base') || trimmed.toLowerCase().endsWith('.eth') || trimmed.toLowerCase().endsWith('.sol') || trimmed.toLowerCase().includes('.base');
     const address = looksLikeDomain ? (resolvedAddress || null) : (resolvedAddress || trimmed);
     if (!address) return;
@@ -160,22 +173,23 @@ export default function ProfileCreation({ onSave, onBack, initialProfile }: Prof
 
   const handleFinalSave = () => onSave(profile);
 
-  const removePayment = (kind: 'ethereum' | 'base' | 'bitcoin' | 'solana' | 'cashapp' | 'venmo') => {
+  const removePayment = (kind: 'ethereum' | 'base' | 'bitcoin' | 'solana' | 'cashapp' | 'venmo' | 'zelle') => {
     if (kind === 'ethereum') setProfile(p => ({ ...p, ethereumAddress: '' }));
     else if (kind === 'base') setProfile(p => ({ ...p, baseAddress: '' }));
     else if (kind === 'bitcoin') setProfile(p => ({ ...p, bitcoinAddress: '' }));
     else if (kind === 'solana') setProfile(p => ({ ...p, solanaAddress: '' }));
     else if (kind === 'cashapp') setProfile(p => ({ ...p, cashAppCashtag: '' }));
-    else setProfile(p => ({ ...p, venmoUsername: '' }));
+    else if (kind === 'venmo') setProfile(p => ({ ...p, venmoUsername: '' }));
+    else setProfile(p => ({ ...p, zelleContact: '' }));
   };
 
-  const hasAnyAddress = profile.ethereumAddress || profile.baseAddress || profile.bitcoinAddress || profile.solanaAddress || !!profile.cashAppCashtag?.trim() || !!profile.venmoUsername?.trim();
+  const hasAnyAddress = profile.ethereumAddress || profile.baseAddress || profile.bitcoinAddress || profile.solanaAddress || !!profile.cashAppCashtag?.trim() || !!profile.venmoUsername?.trim() || !!profile.zelleContact?.trim();
 
   // flavor styling per method (no flavor names in UI)
   const flavorCard = (ch: typeof editingChain) =>
-    ch === 'ethereum' ? 'piri-card-ethereum' : ch === 'base' ? 'piri-card-base' : ch === 'bitcoin' ? 'piri-card-bitcoin' : ch === 'solana' ? 'piri-card-solana' : ch === 'cashapp' ? 'piri-card-cashapp' : 'piri-card-venmo';
+    ch === 'ethereum' ? 'piri-card-ethereum' : ch === 'base' ? 'piri-card-base' : ch === 'bitcoin' ? 'piri-card-bitcoin' : ch === 'solana' ? 'piri-card-solana' : ch === 'cashapp' ? 'piri-card-cashapp' : ch === 'venmo' ? 'piri-card-venmo' : 'piri-card-zelle';
   const flavorLogoBox = (ch: typeof editingChain) =>
-    ch === 'ethereum' ? 'border-piri-ethereum bg-piri-ethereum/20' : ch === 'base' ? 'border-piri-base bg-piri-base/20' : ch === 'bitcoin' ? 'border-piri-bitcoin bg-piri-bitcoin/20' : ch === 'solana' ? 'border-piri-solana bg-piri-solana/20' : ch === 'cashapp' ? 'border-piri-cashapp bg-piri-cashapp/20' : 'border-piri-venmo bg-piri-venmo/20';
+    ch === 'ethereum' ? 'border-piri-ethereum bg-piri-ethereum/20' : ch === 'base' ? 'border-piri-base bg-piri-base/20' : ch === 'bitcoin' ? 'border-piri-bitcoin bg-piri-bitcoin/20' : ch === 'solana' ? 'border-piri-solana bg-piri-solana/20' : ch === 'cashapp' ? 'border-piri-cashapp bg-piri-cashapp/20' : ch === 'venmo' ? 'border-piri-venmo bg-piri-venmo/20' : 'border-piri-zelle bg-piri-zelle/20';
 
   // ─── step 1: pick a chain to add or edit ───
   if (step === 'chains') {
@@ -190,14 +204,15 @@ export default function ProfileCreation({ onSave, onBack, initialProfile }: Prof
             <p className="text-sm piri-muted font-semibold">add crypto wallets and fiat apps — Piri supports them all</p>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            {(['ethereum', 'base', 'bitcoin', 'solana', 'cashapp', 'venmo'] as const).map((chain) => {
-              const label = chain === 'ethereum' ? 'Ethereum' : chain === 'base' ? 'Base' : chain === 'bitcoin' ? 'Bitcoin' : chain === 'solana' ? 'Solana' : chain === 'cashapp' ? 'Cash App' : 'Venmo';
+            {(['ethereum', 'base', 'bitcoin', 'solana', 'cashapp', 'venmo', 'zelle'] as const).map((chain) => {
+              const label = chain === 'ethereum' ? 'Ethereum' : chain === 'base' ? 'Base' : chain === 'bitcoin' ? 'Bitcoin' : chain === 'solana' ? 'Solana' : chain === 'cashapp' ? 'Cash App' : chain === 'venmo' ? 'Venmo' : 'Zelle';
               const hint = chain === 'ethereum' ? (profile.ethereumAddress ? `${profile.ethereumAddress.slice(0, 8)}...` : 'ETH or .eth')
                 : chain === 'base' ? (profile.baseAddress ? `${profile.baseAddress.slice(0, 8)}...` : 'ETH or .base')
                 : chain === 'bitcoin' ? (profile.bitcoinAddress ? `${profile.bitcoinAddress.slice(0, 8)}...` : '1... or bc1...')
                 : chain === 'solana' ? (profile.solanaAddress ? `${profile.solanaAddress.slice(0, 8)}...` : 'SOL or .sol')
                 : chain === 'cashapp' ? (profile.cashAppCashtag ? `$${profile.cashAppCashtag}` : '$cashtag')
-                : (profile.venmoUsername ? `@${profile.venmoUsername}` : 'username');
+                : chain === 'venmo' ? (profile.venmoUsername ? `@${profile.venmoUsername}` : 'username')
+                : (profile.zelleContact ? (profile.zelleContact.includes('@') ? profile.zelleContact : profile.zelleContact) : 'email or phone');
               return (
                 <button key={chain} onClick={() => handlePickChain(chain)} className={`relative p-4 rounded-xl border-2 flex flex-col items-center justify-center gap-2 transition-all hover:scale-[1.02] aspect-square min-h-0 shadow-sm piri-card ${flavorCard(chain)}`}>
                   <Plus className="absolute top-2 right-2 w-4 h-4 piri-muted" />
@@ -261,6 +276,28 @@ export default function ProfileCreation({ onSave, onBack, initialProfile }: Prof
                 className="w-full px-4 py-4 rounded-xl border-2 border-piri focus:outline-none focus:ring-2 focus:ring-piri text-piri placeholder-piri-muted text-lg font-semibold" autoFocus />
               <button onClick={handleSaveAddress} disabled={!manualAddress.trim().replace(/^@/, '').trim()} className="w-full py-4 rounded-xl font-bold text-lg piri-btn-primary disabled:opacity-40 hover:opacity-90 transition-opacity">
                 Save username
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    if (editingChain === 'zelle') {
+      return (
+        <div className="piri-page">
+          <div className="max-w-lg mx-auto px-4 py-12">
+            <button onClick={() => setStep('chains')} className="mb-6 flex items-center gap-2 font-semibold text-piri transition-opacity hover:opacity-70">
+              <ArrowLeft className="w-5 h-5" /> Back
+            </button>
+            <div className="text-center mb-10">
+              <h1 className="piri-heading text-3xl font-black mb-2">Zelle</h1>
+              <p className="text-sm piri-muted font-semibold">email or phone enrolled with Zelle in your bank app</p>
+            </div>
+            <div className="space-y-6">
+              <input type="text" value={manualAddress} onChange={(e) => setManualAddress(e.target.value)} placeholder="you@email.com or (555) 123-4567"
+                className="w-full px-4 py-4 rounded-xl border-2 border-piri focus:outline-none focus:ring-2 focus:ring-piri text-piri placeholder-piri-muted text-lg font-semibold" autoFocus />
+              <button onClick={handleSaveAddress} disabled={!manualAddress.trim()} className="w-full py-4 rounded-xl font-bold text-lg piri-btn-primary disabled:opacity-40 hover:opacity-90 transition-opacity">
+                Save Zelle contact
               </button>
             </div>
           </div>
@@ -393,6 +430,18 @@ export default function ProfileCreation({ onSave, onBack, initialProfile }: Prof
                 </div>
               </div>
               {profile.venmoUsername ? <code className="text-piri text-sm font-semibold">@{profile.venmoUsername}</code> : <button onClick={() => handlePickChain('venmo')} className="flex items-center gap-1 text-sm font-semibold piri-link"><Plus className="w-4 h-4" /> Add Venmo</button>}
+            </div>
+          </div>
+          <div className="piri-card rounded-xl border-2 piri-card-zelle shadow-sm">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-bold text-piri flex items-center gap-2"><ChainLogo chain="zelle" size={20} /> Zelle</span>
+                <div className="flex items-center gap-2">
+                  {profile.zelleContact && <button onClick={() => removePayment('zelle')} className="text-xs font-semibold text-red-600 hover:underline flex items-center gap-1"><Trash2 className="w-3.5 h-3.5" /> Remove</button>}
+                  <button onClick={() => handlePickChain('zelle')} className="text-xs font-semibold piri-link">{profile.zelleContact ? 'Edit' : 'Add'}</button>
+                </div>
+              </div>
+              {profile.zelleContact ? <code className="text-piri text-sm font-semibold break-all">{profile.zelleContact}</code> : <button onClick={() => handlePickChain('zelle')} className="flex items-center gap-1 text-sm font-semibold piri-link"><Plus className="w-4 h-4" /> Add Zelle</button>}
             </div>
           </div>
         </div>

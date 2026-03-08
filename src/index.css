@@ -18,7 +18,7 @@
   --piri-bitcoin: #F59E0B;    /* amber */
   --piri-solana: #86198F;     /* Solana (Guayaba) */
   --piri-cashapp: #10B981;   /* green */
-  --piri-limon: #C97BF5;      /* Zelle (Uva) */
+  --piri-zelle: #6D1ED4;     /* Zelle brand purple */
   /* typography */
   --piri-font-display: 'Fredoka One', cursive;
   --piri-font-body: 'Nunito', sans-serif;
@@ -70,4 +70,5 @@
   .piri-card-bitcoin { background-color: rgba(245, 158, 11, 0.2); border-color: var(--piri-bitcoin); }
   .piri-card-solana { background-color: rgba(134, 25, 143, 0.2); border-color: var(--piri-solana); }
   .piri-card-cashapp { background-color: rgba(16, 185, 129, 0.2); border-color: var(--piri-cashapp); }
+  .piri-card-zelle { background-color: rgba(109, 30, 212, 0.2); border-color: var(--piri-zelle); }
 }

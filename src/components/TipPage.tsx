@@ -7,7 +7,7 @@ import ChainLogo from './ChainLogo';
 import { UserProfile } from './ProfileCreation';
 
 type Chain = 'ethereum' | 'base' | 'bitcoin' | 'solana';
-type PaymentMethod = Chain | 'cashapp' | 'venmo';
+type PaymentMethod = Chain | 'cashapp' | 'venmo' | 'zelle';
 type View = 'menu' | 'detail' | 'pay';
 
 // original piri flavor palette for tiles/cards; no flavor names on labels
@@ -43,9 +43,10 @@ export default function TipPage({ profile }: { profile: UserProfile }) {
     chains.push({ chain: 'solana', address: profile.solanaAddress, label: 'Solana', cardClass: 'piri-card-solana', logoBoxClass: 'border-piri-solana bg-piri-solana/20', btnClass: 'bg-piri-solana' });
   }
 
-  const selected = selectedChain && selectedChain !== 'cashapp' && selectedChain !== 'venmo' ? chains.find(c => c.chain === selectedChain) : null;
+  const selected = selectedChain && selectedChain !== 'cashapp' && selectedChain !== 'venmo' && selectedChain !== 'zelle' ? chains.find(c => c.chain === selectedChain) : null;
   const cashtag = profile.cashAppCashtag?.trim() ? profile.cashAppCashtag : null;
   const venmoUsername = profile.venmoUsername?.trim() ? profile.venmoUsername : null;
+  const zelleContact = profile.zelleContact?.trim() ? profile.zelleContact : null;
 
   const copyAddress = (address: string) => {
     navigator.clipboard.writeText(address);
@@ -175,6 +176,41 @@ export default function TipPage({ profile }: { profile: UserProfile }) {
     );
   }
 
+  if (view === 'detail' && selectedChain === 'zelle' && zelleContact) {
+    const openZelle = () => {
+      window.open('https://www.zellepay.com', '_blank', 'noopener,noreferrer');
+    };
+    return (
+      <div className="piri-page">
+        <div className="max-w-lg mx-auto px-4 py-12">
+          <button onClick={handleBack} className="mb-8 flex items-center gap-2 font-semibold text-piri transition-opacity hover:opacity-70">
+            <ArrowLeft className="w-5 h-5" /> Back
+          </button>
+          <div className="text-center mb-10">
+            <div className="w-14 h-14 mx-auto mb-4 rounded-xl border-2 border-piri-zelle bg-piri-zelle/20 flex items-center justify-center shadow-sm">
+              <ChainLogo chain="zelle" size={32} />
+            </div>
+            <h1 className="piri-heading text-3xl font-black mb-2">Zelle</h1>
+            <p className="text-sm font-semibold piri-muted">copy contact, then open Zelle in your bank app</p>
+          </div>
+          <div className="piri-card border-2 border-piri-zelle piri-card-zelle rounded-xl p-4 flex items-center gap-3 mb-6 shadow-sm">
+            <div className="flex-1 min-w-0">
+              <label className="text-xs font-bold piri-muted block mb-1">Pay to</label>
+              <code className="text-piri text-lg font-semibold block break-all">{zelleContact}</code>
+            </div>
+            <button onClick={() => { navigator.clipboard.writeText(zelleContact); setCopied(true); setTimeout(() => setCopied(false), 2000); }} className="px-4 py-2 rounded-xl font-bold text-white bg-piri-zelle flex items-center gap-2 transition-opacity hover:opacity-90 shrink-0">
+              {copied ? <><Check className="w-4 h-4" /> Copied</> : <><Copy className="w-4 h-4" /> Copy</>}
+            </button>
+          </div>
+          <button onClick={openZelle} className="w-full py-4 rounded-xl font-bold text-white bg-piri-zelle flex items-center justify-center gap-3 transition-opacity hover:opacity-90">
+            <ExternalLink className="w-5 h-5" />
+            Open Zelle (find your bank)
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (view === 'detail' && selectedChain === 'cashapp' && cashtag) {
     const num = parseFloat(cashAppAmount.trim().replace(/[^0-9.]/g, ''));
     const hasValidAmount = !isNaN(num) && num > 0;
@@ -265,7 +301,7 @@ export default function TipPage({ profile }: { profile: UserProfile }) {
           <p className="text-xl font-bold text-piri">pick your flavors · get paid</p>
         </div>
 
-        {chains.length === 0 && !cashtag && !venmoUsername ? (
+        {chains.length === 0 && !cashtag && !venmoUsername && !zelleContact ? (
           <div className="text-center py-12 rounded-2xl border-2 border-piri bg-white/50 p-8">
             <p className="text-2xl mb-2">🍧</p>
             <p className="font-bold text-piri">Piri says: no payment methods set up yet</p>
@@ -309,6 +345,17 @@ export default function TipPage({ profile }: { profile: UserProfile }) {
                 <div className="min-w-0">
                   <div className="font-bold text-xl text-piri">Venmo</div>
                   <div className="text-sm piri-muted">Pay @{venmoUsername}</div>
+                </div>
+              </button>
+            )}
+            {zelleContact && (
+              <button onClick={() => handleSelect('zelle')} className="w-full p-6 rounded-xl border-2 flex items-center gap-4 transition-all hover:scale-[1.02] piri-card piri-card-zelle text-left shadow-sm">
+                <div className="w-14 h-14 rounded-xl border-2 border-piri-zelle bg-piri-zelle/20 flex items-center justify-center shrink-0">
+                  <ChainLogo chain="zelle" size={36} />
+                </div>
+                <div className="min-w-0">
+                  <div className="font-bold text-xl text-piri">Zelle</div>
+                  <div className="text-sm piri-muted truncate">Pay {zelleContact}</div>
                 </div>
               </button>
             )}
