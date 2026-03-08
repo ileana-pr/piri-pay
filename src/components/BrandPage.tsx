@@ -85,7 +85,7 @@ export default function BrandPage() {
             <div>
               <p className="text-white/70 text-xs font-black uppercase tracking-widest mb-1">Meet</p>
               <h2 className="text-7xl font-black text-white leading-none" style={{ fontFamily: "'Fredoka One', cursive" }}>Piri</h2>
-              <p className="text-white/80 text-base font-bold mt-2">La piragua del pueblo — one scan, every way to pay.</p>
+              <p className="text-white/80 text-base font-bold mt-2">One scan, every way to pay.</p>
               <p className="text-white/60 text-sm mt-1 leading-relaxed">
                 A payment app so sweet, people fall in love with the brand before they even open the QR.
               </p>
