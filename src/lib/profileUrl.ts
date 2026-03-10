@@ -9,6 +9,7 @@ const SHORT: Record<string, string> = {
   cashAppCashtag: 'c',
   venmoUsername: 'v',
   zelleContact: 'z',
+  paypalUsername: 'p',
 };
 const LONG: Record<string, string> = Object.fromEntries(
   Object.entries(SHORT).map(([k, v]) => [v, k])
@@ -24,6 +25,7 @@ export function encodeProfileForUrl(profile: UserProfile): string {
   if (profile.cashAppCashtag?.trim()) compact.c = profile.cashAppCashtag.trim();
   if (profile.venmoUsername?.trim()) compact.v = profile.venmoUsername.trim();
   if (profile.zelleContact?.trim()) compact.z = profile.zelleContact.trim();
+  if (profile.paypalUsername?.trim()) compact.p = profile.paypalUsername.trim();
   return encodeURIComponent(JSON.stringify(compact));
 }
 
@@ -46,6 +48,7 @@ export function decodeProfileFromUrl(encoded: string): UserProfile {
       cashAppCashtag: out.cashAppCashtag,
       venmoUsername: out.venmoUsername,
       zelleContact: out.zelleContact,
+      paypalUsername: out.paypalUsername,
     };
   }
   return parsed as unknown as UserProfile;

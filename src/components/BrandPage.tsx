@@ -11,7 +11,7 @@ const FLAVORS = [
   { name: 'Lima limón', color: '#10B981', emoji: '💚', method: 'Cash App', hex: '#10B981' },
   { name: 'Frambuesa azul', color: '#0EA5E9', emoji: '🫐', method: 'Venmo', hex: '#0EA5E9' },
   { name: 'Uva', color: '#C97BF5', emoji: '🍇', method: 'Zelle', hex: '#C97BF5' },
-  { name: 'Tamarindo', color: '#FF9A3C', emoji: '🟠', method: '—', hex: '#FF9A3C' },
+  { name: 'Tamarindo', color: '#003087', emoji: '🟠', method: 'PayPal', hex: '#003087' },
   { name: 'Parcha', color: '#84CC16', emoji: '🍈', method: '—', hex: '#84CC16' },
   { name: 'Piña', color: '#FBBF24', emoji: '🍍', method: '—', hex: '#FBBF24' },
   { name: 'Cereza', color: '#E11D48', emoji: '🍒', method: '—', hex: '#E11D48' },

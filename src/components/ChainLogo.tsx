@@ -5,7 +5,7 @@ import { useState } from 'react';
  * Place in public/logo/: ethereum.svg, base.svg, bitcoin.svg, solana.svg, cashapp.svg, venmo.svg
  * (or .png — we try .svg then .png). Fallback: initial when image missing or fails.
  */
-type ChainId = 'ethereum' | 'base' | 'bitcoin' | 'solana' | 'cashapp' | 'venmo' | 'zelle';
+type ChainId = 'ethereum' | 'base' | 'bitcoin' | 'solana' | 'cashapp' | 'venmo' | 'zelle' | 'paypal';
 
 const LOGO_DIR = '/logo';
 
@@ -17,6 +17,7 @@ const FALLBACK_LETTER: Record<ChainId, string> = {
   cashapp: '$',
   venmo: 'V',
   zelle: 'Z',
+  paypal: 'P',
 };
 
 interface ChainLogoProps {

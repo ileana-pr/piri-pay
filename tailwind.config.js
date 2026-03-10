@@ -16,6 +16,7 @@ export default {
           solana: '#9945FF',
           cashapp: '#10B981',
           zelle: '#6D1ED4',
+          paypal: '#003087',
         },
       },
       fontFamily: {

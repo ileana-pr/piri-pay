@@ -7,7 +7,7 @@ import ChainLogo from './ChainLogo';
 import { UserProfile } from './ProfileCreation';
 
 type Chain = 'ethereum' | 'base' | 'bitcoin' | 'solana';
-type PaymentMethod = Chain | 'cashapp' | 'venmo' | 'zelle';
+type PaymentMethod = Chain | 'cashapp' | 'venmo' | 'zelle' | 'paypal';
 type View = 'menu' | 'detail' | 'pay';
 
 // original piri flavor palette for tiles/cards; no flavor names on labels
@@ -26,6 +26,7 @@ export default function TipPage({ profile }: { profile: UserProfile }) {
   const [copied, setCopied] = useState(false);
   const [cashAppAmount, setCashAppAmount] = useState('');
   const [venmoAmount, setVenmoAmount] = useState('');
+  const [paypalAmount, setPaypalAmount] = useState('');
 
   // build the list of chains this payee has configured
   const chains: ChainOption[] = [];
@@ -43,10 +44,11 @@ export default function TipPage({ profile }: { profile: UserProfile }) {
     chains.push({ chain: 'solana', address: profile.solanaAddress, label: 'Solana', cardClass: 'piri-card-solana', logoBoxClass: 'border-piri-solana bg-piri-solana/20', btnClass: 'bg-piri-solana' });
   }
 
-  const selected = selectedChain && selectedChain !== 'cashapp' && selectedChain !== 'venmo' && selectedChain !== 'zelle' ? chains.find(c => c.chain === selectedChain) : null;
+  const selected = selectedChain && selectedChain !== 'cashapp' && selectedChain !== 'venmo' && selectedChain !== 'zelle' && selectedChain !== 'paypal' ? chains.find(c => c.chain === selectedChain) : null;
   const cashtag = profile.cashAppCashtag?.trim() ? profile.cashAppCashtag : null;
   const venmoUsername = profile.venmoUsername?.trim() ? profile.venmoUsername : null;
   const zelleContact = profile.zelleContact?.trim() ? profile.zelleContact : null;
+  const paypalUsername = profile.paypalUsername?.trim() ? profile.paypalUsername : null;
 
   const copyAddress = (address: string) => {
     navigator.clipboard.writeText(address);
@@ -59,6 +61,7 @@ export default function TipPage({ profile }: { profile: UserProfile }) {
     setCopied(false);
     if (method === 'cashapp') setCashAppAmount('');
     if (method === 'venmo') setVenmoAmount('');
+    if (method === 'paypal') setPaypalAmount('');
     setView('detail');
   };
 
@@ -170,6 +173,55 @@ export default function TipPage({ profile }: { profile: UserProfile }) {
           <button onClick={openVenmo} className="w-full py-4 rounded-xl font-bold text-white bg-piri-venmo flex items-center justify-center gap-3 transition-opacity hover:opacity-90">
             <ExternalLink className="w-5 h-5" />
             Open in Venmo
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (view === 'detail' && selectedChain === 'paypal' && paypalUsername) {
+    const num = parseFloat(paypalAmount.trim().replace(/[^0-9.]/g, ''));
+    const hasValidAmount = !isNaN(num) && num > 0;
+    const openPayPal = () => {
+      const params = new URLSearchParams({ currency: 'USD' });
+      if (hasValidAmount) params.set('amount', String(num));
+      const qs = params.toString();
+      window.open(`https://paypal.me/${paypalUsername}${qs ? `?${qs}` : ''}`, '_blank', 'noopener,noreferrer');
+    };
+    return (
+      <div className="piri-page">
+        <div className="max-w-lg mx-auto px-4 py-12">
+          <button onClick={handleBack} className="mb-8 flex items-center gap-2 font-semibold text-piri transition-opacity hover:opacity-70">
+            <ArrowLeft className="w-5 h-5" /> Back
+          </button>
+          <div className="text-center mb-10">
+            <div className="w-14 h-14 mx-auto mb-4 rounded-xl border-2 border-piri-paypal bg-piri-paypal/20 flex items-center justify-center shadow-sm">
+              <ChainLogo chain="paypal" size={32} />
+            </div>
+            <h1 className="piri-heading text-3xl font-black mb-2">PayPal</h1>
+            <p className="text-sm font-semibold piri-muted">enter amount, then open PayPal to pay</p>
+          </div>
+          <div className="piri-card border-2 border-piri-paypal piri-card-paypal rounded-xl p-4 flex items-center gap-3 mb-4 shadow-sm">
+            <div className="flex-1 min-w-0">
+              <label className="text-xs font-bold piri-muted block mb-1">Pay to</label>
+              <code className="text-piri text-lg font-semibold block">paypal.me/{paypalUsername}</code>
+            </div>
+            <button onClick={() => { navigator.clipboard.writeText(`paypal.me/${paypalUsername}`); setCopied(true); setTimeout(() => setCopied(false), 2000); }} className="px-4 py-2 rounded-xl font-bold text-white bg-piri-paypal flex items-center gap-2 transition-opacity hover:opacity-90">
+              {copied ? <><Check className="w-4 h-4" /> Copied</> : <><Copy className="w-4 h-4" /> Copy</>}
+            </button>
+          </div>
+          <div className="rounded-xl p-6 mb-6 border-2 border-piri-paypal piri-card-paypal shadow-sm">
+            <label className="text-xs font-bold piri-muted mb-3 block uppercase tracking-wider">Amount (optional)</label>
+            <div className="flex items-center gap-2">
+              <span className="text-piri text-lg">$</span>
+              <input type="text" inputMode="decimal" value={paypalAmount} onChange={(e) => setPaypalAmount(e.target.value)} placeholder="0.00"
+                className="flex-1 px-4 py-3 rounded-lg border-2 border-piri focus:outline-none focus:ring-2 focus:ring-piri text-piri placeholder-piri-muted text-lg font-semibold" />
+            </div>
+            <p className="text-xs piri-muted mt-2">Piri pre-fills this in PayPal when you open the link</p>
+          </div>
+          <button onClick={openPayPal} className="w-full py-4 rounded-xl font-bold text-white bg-piri-paypal flex items-center justify-center gap-3 transition-opacity hover:opacity-90">
+            <ExternalLink className="w-5 h-5" />
+            Open in PayPal
           </button>
         </div>
       </div>
@@ -301,7 +353,7 @@ export default function TipPage({ profile }: { profile: UserProfile }) {
           <p className="text-xl font-bold text-piri">pick your flavors · get paid</p>
         </div>
 
-        {chains.length === 0 && !cashtag && !venmoUsername && !zelleContact ? (
+        {chains.length === 0 && !cashtag && !venmoUsername && !zelleContact && !paypalUsername ? (
           <div className="text-center py-12 rounded-2xl border-2 border-piri bg-white/50 p-8">
             <p className="text-2xl mb-2">🍧</p>
             <p className="font-bold text-piri">Piri says: no payment methods set up yet</p>
@@ -356,6 +408,17 @@ export default function TipPage({ profile }: { profile: UserProfile }) {
                 <div className="min-w-0">
                   <div className="font-bold text-xl text-piri">Zelle</div>
                   <div className="text-sm piri-muted truncate">Pay {zelleContact}</div>
+                </div>
+              </button>
+            )}
+            {paypalUsername && (
+              <button onClick={() => handleSelect('paypal')} className="w-full p-6 rounded-xl border-2 flex items-center gap-4 transition-all hover:scale-[1.02] piri-card piri-card-paypal text-left shadow-sm">
+                <div className="w-14 h-14 rounded-xl border-2 border-piri-paypal bg-piri-paypal/20 flex items-center justify-center shrink-0">
+                  <ChainLogo chain="paypal" size={36} />
+                </div>
+                <div className="min-w-0">
+                  <div className="font-bold text-xl text-piri">PayPal</div>
+                  <div className="text-sm piri-muted">Pay paypal.me/{paypalUsername}</div>
                 </div>
               </button>
             )}
