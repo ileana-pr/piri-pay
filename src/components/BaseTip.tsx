@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useAccount, useConnect, useDisconnect, useWaitForTransactionReceipt, useWriteContract, useBalance } from 'wagmi';
+import { useConnection, useConnect, useDisconnect, useConnections, useSwitchChain, useWaitForTransactionReceipt, useWriteContract, useBalance } from 'wagmi';
 
 import { useConnectModal } from '@rainbow-me/rainbowkit';
 import { base } from 'wagmi/chains';
@@ -8,6 +8,7 @@ import { parseEther, parseUnits, erc20Abi, Address } from 'viem';
 import { ArrowLeft, CheckCircle2, Loader2, AlertCircle, XCircle } from 'lucide-react';
 import { POPULAR_TOKENS, TokenConfig } from '../lib/popularTokens';
 import ChainLogo from './ChainLogo';
+import { BASE_ACCOUNT_CONNECTOR_ID, disconnectAllExcept } from '../lib/pruneWalletConnections';
 
 interface BaseTipProps {
   onBack: () => void;
@@ -21,9 +22,11 @@ export default function BaseTip({ onBack, receivingAddress }: BaseTipProps) {
   const [error, setError] = useState<string | null>(null);
   const [transactionCancelled, setTransactionCancelled] = useState(false);
   const [isDirectSending, setIsDirectSending] = useState(false);
-  const { address: ethAddress, isConnected: isEthConnected, chain } = useAccount();
+  const { address: ethAddress, isConnected: isEthConnected, chain, connector } = useConnection();
   const { error: connectError, isPending: isConnecting } = useConnect();
-  const { disconnect: disconnectEth } = useDisconnect();
+  const { mutate: disconnectEth, mutateAsync: disconnectMutateAsync } = useDisconnect();
+  const { mutateAsync: switchChainMutateAsync } = useSwitchChain();
+  const connections = useConnections();
   const { openConnectModal } = useConnectModal();
 
   const expectedChain = base;
@@ -40,8 +43,23 @@ export default function BaseTip({ onBack, receivingAddress }: BaseTipProps) {
     }
   }, [isEthConnected, chain?.id]);
 
+  // base account + metamask both connected → chain events come from wrong provider; keep only base account
+  const connectionIds = useMemo(() => connections.map((c) => c.connector.uid).join(','), [connections]);
+  useEffect(() => {
+    if (!isEthConnected || connector?.id !== BASE_ACCOUNT_CONNECTOR_ID || connections.length <= 1) return;
+    let cancelled = false;
+    (async () => {
+      await disconnectAllExcept(connections, BASE_ACCOUNT_CONNECTOR_ID, disconnectMutateAsync);
+      if (!cancelled && chain?.id) setActualChainId(chain.id);
+    })();
+    return () => { cancelled = true; };
+    // connectionIds replaces connections ref equality so we re-run when set of connections changes
+  }, [isEthConnected, connector?.id, connectionIds, connections, disconnectMutateAsync, chain?.id]);
+
+  // never attach to window.ethereum when using base account — that provider is metamask and overwrites chain
   useEffect(() => {
     if (!isEthConnected || !window.ethereum) return;
+    if (connector?.id === BASE_ACCOUNT_CONNECTOR_ID) return;
 
     const handleChainChanged = (chainId: string | number) => {
       let chainIdNum: number;
@@ -60,7 +78,7 @@ export default function BaseTip({ onBack, receivingAddress }: BaseTipProps) {
     return () => {
       (window.ethereum as EIP1193Provider)?.removeListener('chainChanged', handleChainChanged);
     };
-  }, [isEthConnected]);
+  }, [isEthConnected, connector?.id]);
 
   const { data: balance } = useBalance({
     address: ethAddress,
@@ -162,10 +180,17 @@ export default function BaseTip({ onBack, receivingAddress }: BaseTipProps) {
   }, [contractError, resetContract, isDirectSending, isUserRejection]);
 
   const handleSwitchNetwork = useCallback(async () => {
-    if (!window.ethereum) return;
     setIsSwitchingNetwork(true);
     setError(null);
     try {
+      // base account (and other embedded wallets) must switch via wagmi — window.ethereum is metamask
+      if (connector?.id === BASE_ACCOUNT_CONNECTOR_ID && switchChainMutateAsync) {
+        await switchChainMutateAsync({ chainId: expectedChain.id });
+        setActualChainId(expectedChain.id);
+        setLastNetworkSwitchTime(Date.now());
+        return;
+      }
+      if (!window.ethereum) return;
       const chainIdHex = `0x${expectedChain.id.toString(16)}`;
       try {
         await (window.ethereum as EIP1193Provider).request({
@@ -216,11 +241,13 @@ export default function BaseTip({ onBack, receivingAddress }: BaseTipProps) {
       setLastNetworkSwitchTime(Date.now());
     } catch (err) {
       console.error('Network switch error:', err);
-      setError('Failed to switch network. Please switch manually in MetaMask.');
+      setError(connector?.id === BASE_ACCOUNT_CONNECTOR_ID
+        ? 'Failed to switch network in Base Account. Try disconnecting and connecting again.'
+        : 'Failed to switch network. Please switch manually in your wallet.');
     } finally {
       setIsSwitchingNetwork(false);
     }
-  }, [expectedChain]);
+  }, [expectedChain, connector?.id, switchChainMutateAsync]);
 
   const handleSendTip = useCallback(async () => {
     if (!amount || parseFloat(amount) <= 0) {
@@ -234,7 +261,8 @@ export default function BaseTip({ onBack, receivingAddress }: BaseTipProps) {
     if (networkMismatch) return;
     if (!actualChainId || actualChainId !== expectedChain.id) return;
 
-    if (window.ethereum) {
+    // base account: never ping window.ethereum — that's metamask and breaks the flow
+    if (connector?.id !== BASE_ACCOUNT_CONNECTOR_ID && window.ethereum) {
       try {
         await (window.ethereum as EIP1193Provider).request({ method: 'eth_blockNumber' });
       } catch {
@@ -374,7 +402,7 @@ export default function BaseTip({ onBack, receivingAddress }: BaseTipProps) {
       console.error('Transaction error:', err);
       setError('Transaction failed. Please try again.');
     }
-  }, [amount, ethAddress, networkMismatch, actualChainId, expectedChain, receivingAddress, selectedToken, writeContract, lastNetworkSwitchTime, isUserRejection]);
+  }, [amount, ethAddress, networkMismatch, actualChainId, expectedChain, receivingAddress, selectedToken, writeContract, lastNetworkSwitchTime, isUserRejection, connector?.id]);
 
   useEffect(() => {
     if (isEthConnected && amount && showWalletSelector && selectedToken) {
@@ -421,14 +449,14 @@ export default function BaseTip({ onBack, receivingAddress }: BaseTipProps) {
               <ChainLogo chain="base" size={40} />
             </div>
             <h2 className="piri-heading text-3xl font-black mb-2">Base</h2>
-            <p className="text-sm piri-muted font-semibold">Your payment address is pre-filled automatically</p>
+            <p className="text-sm font-semibold text-slate-700">Your payment address is pre-filled automatically</p>
           </div>
 
           {!isSuccess ? (
             <div className="space-y-6">
               {!selectedToken ? (
                 <div>
-                  <label className="block text-sm font-medium mb-3 text-gray-300">Select Token</label>
+                  <label className="block text-sm font-medium mb-3 text-slate-700">Select Token</label>
                   <div className="space-y-3">
                     {tokens?.native.map((token) => (
                       <button
@@ -467,7 +495,7 @@ export default function BaseTip({ onBack, receivingAddress }: BaseTipProps) {
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-3 text-gray-300">Enter Amount ({selectedToken.symbol})</label>
+                    <label className="block text-sm font-medium mb-3 text-slate-700">Enter Amount ({selectedToken.symbol})</label>
                     <input
                       type="number"
                       step="0.001"
@@ -484,14 +512,14 @@ export default function BaseTip({ onBack, receivingAddress }: BaseTipProps) {
 
               {selectedToken && (
                 <div>
-                  <p className="text-sm text-gray-400 mb-3">Quick amounts</p>
+                  <p className="text-sm mb-3" style={{ color: 'var(--piri-text)', opacity: 0.5 }}>Quick amounts</p>
                   <div className="grid grid-cols-5 gap-2">
                     {quickAmounts.map((amt) => (
                       <button
                         key={amt}
                         onClick={() => { setAmount(amt); setError(null); setTransactionCancelled(false); }}
                         disabled={isSending || isConfirming}
-                        className="py-2 px-3 bg-slate-700/50 hover:bg-slate-700 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                        className="py-2 px-3 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 border-2 bg-piri-base/8 border-piri-base/25 hover:bg-piri-base/15 text-[#2D0A00]"
                       >
                         {amt}
                       </button>
@@ -501,16 +529,16 @@ export default function BaseTip({ onBack, receivingAddress }: BaseTipProps) {
               )}
 
               {showWalletSelector && !isEthConnected && (
-                <div className="space-y-4 p-6 bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-2xl border-2 border-indigo-500/30 shadow-2xl backdrop-blur-sm">
+                <div className="space-y-4 p-6 rounded-2xl border-2 shadow-lg bg-piri-base/10 border-piri-base/35 backdrop-blur-sm">
                   <div className="text-center mb-6">
                     <div className="text-4xl mb-2">👛</div>
-                    <p className="text-lg font-bold text-white">Connect Your Wallet</p>
+                    <p className="text-lg font-bold text-[#2D0A00]">Connect Your Wallet</p>
                   </div>
                   <button
                     type="button"
                     onClick={() => openConnectModal?.()}
                     disabled={isConnecting}
-                    className="w-full py-4 px-6 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center gap-3 bg-gradient-to-r from-indigo-500 via-blue-500 to-indigo-600 hover:from-indigo-600 hover:via-blue-600 hover:to-indigo-700 hover:scale-105 hover:shadow-lg hover:shadow-indigo-500/50 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full py-4 px-6 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center gap-3 bg-piri-base text-white hover:opacity-90 hover:scale-[1.02] shadow-md disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                   >
                     <span className="text-2xl">🔗</span>
                     <span>Connect wallet</span>
@@ -518,7 +546,7 @@ export default function BaseTip({ onBack, receivingAddress }: BaseTipProps) {
                   </button>
                   <button
                     onClick={() => setShowWalletSelector(false)}
-                    className="w-full py-2 px-4 text-gray-400 hover:text-white text-sm transition-colors rounded-lg hover:bg-slate-700/50"
+                    className="w-full py-2 px-4 text-sm transition-colors rounded-lg text-[#2D0A00]/50 hover:text-[#2D0A00] hover:bg-piri-base/10"
                   >
                     Maybe later
                   </button>
@@ -526,34 +554,35 @@ export default function BaseTip({ onBack, receivingAddress }: BaseTipProps) {
               )}
 
               {isEthConnected && !showWalletSelector && (
-                <div className="bg-slate-900/50 rounded-xl p-4 border border-slate-700/50 space-y-2">
+                <div className="rounded-xl p-4 border-2 space-y-2 bg-white/85 border-piri-base/30">
                   <div>
-                    <p className="text-sm text-gray-400 mb-1">Connected Wallet</p>
-                    <p className="font-mono text-sm">{ethAddress?.slice(0, 6)}...{ethAddress?.slice(-4)}</p>
+                    <p className="text-sm mb-1" style={{ color: 'var(--piri-text)', opacity: 0.5 }}>Connected Wallet</p>
+                    <p className="font-mono text-sm font-semibold text-[#2D0A00]">{ethAddress?.slice(0, 6)}...{ethAddress?.slice(-4)}</p>
                   </div>
                   {currentNetwork && (
                     <div>
-                      <p className="text-sm text-gray-400 mb-1">Network</p>
-                      <p className="text-sm font-medium">{currentNetwork}</p>
+                      <p className="text-sm mb-1" style={{ color: 'var(--piri-text)', opacity: 0.5 }}>Network</p>
+                      <p className="text-sm font-bold text-[#2D0A00]">{currentNetwork}</p>
                     </div>
                   )}
-                  <button onClick={() => disconnectEth()} className="text-sm text-red-400 hover:text-red-300 mt-2">Disconnect</button>
+                  <button onClick={() => disconnectEth()} className="text-sm font-semibold text-red-600 hover:text-red-700 mt-2">Disconnect</button>
                 </div>
               )}
 
               {networkMismatch && (
-                <div className="flex flex-col gap-3 p-4 bg-yellow-500/10 border border-yellow-500/50 rounded-xl">
+                <div className="flex flex-col gap-3 p-4 rounded-xl border-2 bg-[#FFF8EE] border-piri-base/45">
                   <div className="flex items-start gap-2">
-                    <AlertCircle className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
+                    <AlertCircle className="w-5 h-5 text-piri-base flex-shrink-0 mt-0.5" />
                     <div className="flex-1">
-                      <p className="text-sm font-semibold text-yellow-400 mb-1">Network Mismatch Detected</p>
-                      <p className="text-sm text-yellow-300/80 mb-2">
-                        Your wallet is on <strong>{currentNetwork || `Chain ${actualChainId || 'Unknown'}`}</strong>, but this app expects <strong>{expectedChain.name}</strong>.
+                      <p className="text-sm font-black mb-1 text-[#2D0A00]" style={{ fontFamily: 'var(--piri-font-display)' }}>Network Mismatch</p>
+                      <p className="text-sm text-[#2D0A00]/85 mb-2 leading-relaxed">
+                        Your wallet is on <strong className="text-[#2D0A00]">{currentNetwork || `Chain ${actualChainId || 'Unknown'}`}</strong>, but this flow expects <strong className="text-[#2D0A00]">{expectedChain.name}</strong>.
                       </p>
                       <button
+                        type="button"
                         onClick={handleSwitchNetwork}
                         disabled={isSwitchingNetwork}
-                        className="w-full py-2 px-4 bg-yellow-500 hover:bg-yellow-600 text-yellow-900 font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full min-h-[44px] py-3 px-4 touch-manipulation bg-piri-base hover:opacity-90 active:opacity-95 text-white font-bold rounded-xl transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {isSwitchingNetwork ? 'Switching...' : `Switch to ${expectedChain.name}`}
                       </button>
@@ -573,24 +602,27 @@ export default function BaseTip({ onBack, receivingAddress }: BaseTipProps) {
               )}
 
               {transactionCancelled && (
-                <div className="flex flex-col gap-4 p-6 bg-amber-500/10 border border-amber-500/40 rounded-2xl">
+                <div className="flex flex-col gap-4 p-6 rounded-2xl border-2 bg-amber-100 border-amber-400 shadow-sm">
                   <div className="flex items-start gap-3">
-                    <XCircle className="w-6 h-6 text-amber-500 flex-shrink-0 mt-0.5" />
+                    <XCircle className="w-6 h-6 flex-shrink-0 mt-0.5" style={{ color: 'var(--piri-ethereum)' }} aria-hidden={true} />
                     <div>
-                      <p className="font-semibold text-amber-700 dark:text-amber-400">Transaction cancelled</p>
-                      <p className="text-sm text-amber-600/90 dark:text-amber-300/80 mt-1">No worries — your funds are safe. You can try again whenever you&apos;re ready.</p>
+                      <p className="font-black text-lg leading-tight" style={{ color: 'var(--piri-ethereum)', fontFamily: 'var(--piri-font-display)' }}>Transaction cancelled</p>
+                      <p className="text-sm font-semibold mt-2 leading-relaxed" style={{ color: 'var(--piri-ethereum)' }}>
+                        No worries — your funds are safe. You can try again whenever you&apos;re ready.
+                      </p>
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-3">
                     <button
                       onClick={handleStartOver}
-                      className="px-4 py-2 bg-piri text-white font-semibold rounded-xl hover:opacity-90 transition-opacity"
+                      className="px-4 py-2 bg-piri-base text-white font-bold rounded-xl hover:opacity-90 transition-opacity"
                     >
                       Start over
                     </button>
                     <button
                       onClick={onBack}
-                      className="px-4 py-2 bg-slate-600 hover:bg-slate-500 text-white font-semibold rounded-xl transition-colors"
+                      className="px-4 py-2 rounded-xl font-bold border-2 transition-colors bg-white/90 hover:bg-white"
+                      style={{ borderColor: 'var(--piri-ethereum)', color: 'var(--piri-ethereum)' }}
                     >
                       Go back
                     </button>

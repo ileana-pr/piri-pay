@@ -642,9 +642,10 @@ export default function EthereumTip({ onBack, receivingAddress }: EthereumTipPro
                         Your wallet is on <strong>{currentNetwork || `Chain ${actualChainId || 'Unknown'}`}</strong>, but this app expects <strong>{expectedChain.name}</strong>.
                       </p>
                       <button
+                        type="button"
                         onClick={handleSwitchNetwork}
                         disabled={isSwitchingNetwork}
-                        className="w-full py-2 px-4 bg-yellow-500 hover:bg-yellow-600 text-yellow-900 font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full min-h-[44px] py-3 px-4 touch-manipulation bg-yellow-500 hover:bg-yellow-600 active:bg-yellow-700 text-yellow-900 font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {isSwitchingNetwork ? 'Switching...' : `Switch to ${expectedChain.name}`}
                       </button>
@@ -665,24 +666,28 @@ export default function EthereumTip({ onBack, receivingAddress }: EthereumTipPro
               )}
 
               {transactionCancelled && (
-                <div className="flex flex-col gap-4 p-6 bg-amber-500/10 border border-amber-500/40 rounded-2xl">
+                <div className="flex flex-col gap-4 p-6 rounded-2xl border-2 bg-amber-100 border-amber-400 shadow-sm">
                   <div className="flex items-start gap-3">
-                    <XCircle className="w-6 h-6 text-amber-500 flex-shrink-0 mt-0.5" />
+                    <XCircle className="w-6 h-6 flex-shrink-0 mt-0.5" style={{ color: 'var(--piri-ethereum)' }} aria-hidden={true} />
                     <div>
-                      <p className="font-semibold text-amber-700 dark:text-amber-400">Transaction cancelled</p>
-                      <p className="text-sm text-amber-600/90 dark:text-amber-300/80 mt-1">No worries — your funds are safe. You can try again whenever you&apos;re ready.</p>
+                      <p className="font-black text-lg leading-tight" style={{ color: 'var(--piri-ethereum)', fontFamily: 'var(--piri-font-display)' }}>Transaction cancelled</p>
+                      <p className="text-sm font-semibold mt-2 leading-relaxed" style={{ color: 'var(--piri-ethereum)' }}>
+                        No worries — your funds are safe. You can try again whenever you&apos;re ready.
+                      </p>
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-3">
                     <button
                       onClick={handleStartOver}
-                      className="px-4 py-2 bg-piri text-white font-semibold rounded-xl hover:opacity-90 transition-opacity"
+                      className="px-4 py-2 text-white font-bold rounded-xl hover:opacity-90 transition-opacity"
+                      style={{ backgroundColor: 'var(--piri-ethereum)' }}
                     >
                       Start over
                     </button>
                     <button
                       onClick={onBack}
-                      className="px-4 py-2 bg-slate-600 hover:bg-slate-500 text-white font-semibold rounded-xl transition-colors"
+                      className="px-4 py-2 rounded-xl font-bold border-2 transition-colors bg-white/90 hover:bg-white"
+                      style={{ borderColor: 'var(--piri-ethereum)', color: 'var(--piri-ethereum)' }}
                     >
                       Go back
                     </button>
