@@ -123,7 +123,7 @@ async function buildShareCanvas(tipUrl: string, size: number, theme: ShareImageT
 
   ctx.fillStyle = taglineFill;
   ctx.font = `600 ${taglineSize}px "${FONT_BODY}", sans-serif`;
-  ctx.fillText('Scan to send us a tip', size / 2, y);
+  ctx.fillText('Scan to send love', size / 2, y);
   y += scale(size, 46);
 
   const qrDrawSize = Math.floor(size * 0.44);
