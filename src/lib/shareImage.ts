@@ -11,7 +11,7 @@ const JPEG_QUALITY_DEFAULT = 0.92;
 export type ShareImageTheme = 'light' | 'dark';
 // layout tuned at 1080; other sizes scale proportionally
 const BASE = 1080;
-const MASCOT_URL = '/logo/piri.png';
+const MASCOT_URL = '/logo/logo-heart-trans-1000px.png';
 const FONT_DISPLAY = 'Fredoka One';
 const FONT_BODY = 'Nunito';
 
@@ -50,7 +50,7 @@ export function formatFileSize(bytes: number): string {
 /** presets users pick before format; smaller = smaller files, still scannable */
 export const SHARE_IMAGE_PRESETS = [
   { id: '1080', size: 1080, label: '1080 × 1080', hint: 'social / high quality' },
-  { id: '1024', size: 1024, label: '1024 × 1024', hint: 'Decentraland-friendly (power of two)' },
+  { id: '1024', size: 1024, label: '1024 × 1024', hint: 'power of two' },
   { id: '768', size: 768, label: '768 × 768', hint: 'balanced' },
   { id: '512', size: 512, label: '512 × 512', hint: 'smallest file' },
 ] as const;
@@ -98,7 +98,7 @@ async function buildShareCanvas(tipUrl: string, size: number, theme: ShareImageT
   const pad = scale(size, 28);
   const r = scale(size, 20);
   const strokeNarrow = Math.max(1, scale(size, 2));
-  const mascotSize = scale(size, 140);
+  const mascotSize = scale(size, 220);
 
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, size, size);
@@ -112,14 +112,14 @@ async function buildShareCanvas(tipUrl: string, size: number, theme: ShareImageT
   if (mascotImg) {
     const mascotX = (size - mascotSize) / 2;
     ctx.drawImage(mascotImg, mascotX, y, mascotSize, mascotSize);
-    y += mascotSize + scale(size, 48);
+    y += mascotSize + scale(size, 24);
   }
 
   ctx.fillStyle = fg;
   ctx.textAlign = 'center';
   ctx.font = `bold ${titleSize}px "${FONT_DISPLAY}", cursive`;
   ctx.fillText('Piri', size / 2, y);
-  y += titleSize + scale(size, 42);
+  y += titleSize + scale(size, 22);
 
   ctx.fillStyle = taglineFill;
   ctx.font = `600 ${taglineSize}px "${FONT_BODY}", sans-serif`;
@@ -142,9 +142,11 @@ async function buildShareCanvas(tipUrl: string, size: number, theme: ShareImageT
   ctx.stroke();
   ctx.drawImage(qrImg, qrX, qrY, qrDrawSize, qrDrawSize);
 
+  const qrBoxBottom = qrY + qrDrawSize + pad;
+  const footerY = qrBoxBottom + scale(size, 40);
   ctx.fillStyle = footerFill;
   ctx.font = `600 ${footerSize}px "${FONT_BODY}", sans-serif`;
-  ctx.fillText('One scan, every flavor', size / 2, size - scale(size, 48));
+  ctx.fillText('🌈 One scan, every flavor', size / 2, footerY);
 
   return canvas;
 }
