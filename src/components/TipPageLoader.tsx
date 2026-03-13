@@ -45,6 +45,5 @@ export default function TipPageLoader({ segment }: TipPageLoaderProps) {
       </div>
     );
   }
-  const hasPrivy = !!import.meta.env.VITE_PRIVY_APP_ID;
-  return <TipPage profile={profile} hasPrivy={hasPrivy} />;
+  return <TipPage profile={profile} />;
 }

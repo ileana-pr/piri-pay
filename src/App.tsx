@@ -1,41 +1,66 @@
 import { useState, useEffect } from 'react';
 import { useAccount } from 'wagmi';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { PrivyProvider } from '@privy-io/react-auth';
-import { WagmiProvider as PrivyWagmiProvider } from '@privy-io/wagmi';
 import { WagmiProvider } from 'wagmi';
 import { RainbowKitProvider } from '@rainbow-me/rainbowkit';
 import '@rainbow-me/rainbowkit/styles.css';
 import { config as rainbowConfig } from './lib/web3Config';
-import { config as privyWagmiConfig } from './lib/wagmiConfigPrivy';
-import { privyConfig } from './lib/privyConfig';
 import { SolanaWalletProvider } from './lib/solanaConfig.tsx';
 import TipPageLoader from './components/TipPageLoader';
 import HomePage from './components/HomePage';
 import ProfileCreation from './components/ProfileCreation';
 import ProfileView from './components/ProfileView';
-import LoginPage from './components/LoginPage';
-import WalletConfirmStep from './components/WalletConfirmStep';
+import SignInPage from './components/SignInPage';
 import { UserProfile } from './components/ProfileCreation';
 import BrandPage from './components/BrandPage';
-import PrivyReadyGate from './components/PrivyReadyGate';
+import WalletSignInStep from './components/WalletSignInStep';
 import { createProfile, updateProfile } from './lib/profileApi';
+import { supabase } from './lib/supabase';
 
 const queryClient = new QueryClient();
 
 // secret brand page — no links from main site; access via /x-piri-brand
 const BRAND_PATH = '/x-piri-brand';
 
-const WALLET_CONFIRMED_KEY = 'piri_wallet_confirmed';
+type Page = 'home' | 'create' | 'view' | 'signIn' | 'walletSignIn';
 
-type Page = 'home' | 'create' | 'view' | 'login' | 'walletConfirm';
-
-function AppContent({ hasPrivy }: { hasPrivy: boolean }) {
+function AppContent() {
   const [currentPage, setCurrentPage] = useState<Page>('home');
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [pendingPreFillAddress, setPendingPreFillAddress] = useState<string | null>(null);
-  const [pendingAction, setPendingAction] = useState<'create' | 'view' | null>(null);
+  const [hasSupabaseSession, setHasSupabaseSession] = useState<boolean | null>(null);
   const { address, isConnected } = useAccount();
+
+  const isSignedIn = isConnected || !!hasSupabaseSession;
+
+  // process magic link (hash or query) + track supabase session
+  useEffect(() => {
+    if (!supabase) {
+      setHasSupabaseSession(false);
+      return;
+    }
+    const hash = window.location.hash;
+    const search = window.location.search;
+    const tokenSource = hash ? hash.substring(1) : search.substring(1);
+    if (tokenSource) {
+      const params = new URLSearchParams(tokenSource);
+      const accessToken = params.get('access_token');
+      const refreshToken = params.get('refresh_token');
+      if (accessToken && refreshToken) {
+        supabase.auth
+          .setSession({ access_token: accessToken, refresh_token: refreshToken })
+          .then(() => {
+            window.history.replaceState(null, '', window.location.pathname);
+          })
+          .catch(console.error);
+      }
+    }
+    supabase.auth.getSession().then(({ data: { session } }) => setHasSupabaseSession(!!session));
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setHasSupabaseSession(!!session);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   // load saved profile from localStorage on mount
   useEffect(() => {
@@ -52,61 +77,45 @@ function AppContent({ hasPrivy }: { hasPrivy: boolean }) {
     }
   }, []);
 
-  // when not connected, show login if user tried to access home/create/view
+  // when not signed in, show sign-in page (get started)
   useEffect(() => {
-    if (!isConnected && (currentPage === 'home' || currentPage === 'create' || currentPage === 'view')) {
-      setCurrentPage('login');
+    if (hasSupabaseSession === null) return;
+    if (!isSignedIn && (currentPage === 'home' || currentPage === 'create' || currentPage === 'view')) {
+      setCurrentPage('signIn');
     }
-  }, [isConnected, currentPage]);
+  }, [isSignedIn, hasSupabaseSession, currentPage]);
 
-  // when connected from login, show wallet confirm if not yet confirmed this session
+  // when signed in (email/google): go straight to profile creation (payment methods)
+  useEffect(() => {
+    if (hasSupabaseSession && currentPage === 'signIn') {
+      setCurrentPage(userProfile ? 'home' : 'create');
+    }
+  }, [hasSupabaseSession, currentPage, userProfile]);
+
+  // when wallet connects from sign-in: SIWE first, then profile creation
   useEffect(() => {
     if (!isConnected) return;
-    const confirmed = sessionStorage.getItem(WALLET_CONFIRMED_KEY);
-    if (currentPage === 'login' && !confirmed) {
-      setCurrentPage('walletConfirm');
+    if (currentPage === 'signIn') {
+      setCurrentPage('walletSignIn');
     }
   }, [isConnected, currentPage]);
 
   const handleCreateProfile = () => {
-    if (!isConnected) {
-      setPendingAction('create');
-      setCurrentPage('login');
-    } else if (!sessionStorage.getItem(WALLET_CONFIRMED_KEY)) {
-      setPendingAction('create');
-      setCurrentPage('walletConfirm');
+    if (!isSignedIn) {
+      setCurrentPage('signIn');
     } else {
       setCurrentPage('create');
     }
   };
   const handleViewProfile = () => {
-    if (!isConnected) {
-      setPendingAction('view');
-      setCurrentPage('login');
+    if (!isSignedIn) {
+      setCurrentPage('signIn');
     } else {
       setCurrentPage('view');
     }
   };
   const handleBackToHome = () => {
-    setPendingAction(null);
     setCurrentPage('home');
-  };
-
-  const handleWalletConfirmYes = () => {
-    sessionStorage.setItem(WALLET_CONFIRMED_KEY, '1');
-    if (address) setPendingPreFillAddress(address);
-    if (pendingAction === 'view') setCurrentPage('view');
-    else if (pendingAction === 'create') setCurrentPage('create');
-    else setCurrentPage(userProfile ? 'home' : 'create');
-    setPendingAction(null);
-  };
-  const handleWalletConfirmNo = () => {
-    sessionStorage.setItem(WALLET_CONFIRMED_KEY, '1');
-    setPendingPreFillAddress(null);
-    if (pendingAction === 'view') setCurrentPage('view');
-    else if (pendingAction === 'create') setCurrentPage('create');
-    else setCurrentPage(userProfile ? 'home' : 'create');
-    setPendingAction(null);
   };
 
   const handleSaveProfile = async (profile: UserProfile) => {
@@ -134,9 +143,15 @@ function AppContent({ hasPrivy }: { hasPrivy: boolean }) {
 
   return (
     <>
-      {currentPage === 'login' && <LoginPage hasPrivy={hasPrivy} />}
-      {currentPage === 'walletConfirm' && (
-        <WalletConfirmStep onYes={handleWalletConfirmYes} onNo={handleWalletConfirmNo} />
+      {currentPage === 'signIn' && <SignInPage />}
+      {currentPage === 'walletSignIn' && (
+        <WalletSignInStep
+          onSuccess={() => {
+            if (address) setPendingPreFillAddress(address);
+            setCurrentPage('create');
+          }}
+          onBack={() => setCurrentPage('signIn')}
+        />
       )}
       {currentPage === 'home' && (
         <HomePage
@@ -179,18 +194,13 @@ function App() {
     return <BrandPage />;
   }
 
-  const privyAppId = import.meta.env.VITE_PRIVY_APP_ID;
-
-  // Privy's WagmiProvider uses useWallets — must not mount until PrivyProvider is ready
   const appContent = path.startsWith('/tip/') ? (
     <TipPageLoader segment={path.replace(/^\/tip\//, '').split('/')[0]} />
-  ) : privyAppId ? (
-    <AppContent hasPrivy={true} />
   ) : (
-    <AppContent hasPrivy={false} />
+    <AppContent />
   );
 
-  const providersWithWagmi = (
+  return (
     <QueryClientProvider client={queryClient}>
       <WagmiProvider config={rainbowConfig}>
         <RainbowKitProvider coolMode={false}>
@@ -200,30 +210,6 @@ function App() {
         </RainbowKitProvider>
       </WagmiProvider>
     </QueryClientProvider>
-  );
-
-  const providersWithPrivyWagmi = (
-    <QueryClientProvider client={queryClient}>
-      <PrivyWagmiProvider config={privyWagmiConfig}>
-        <RainbowKitProvider coolMode={false}>
-          <SolanaWalletProvider>
-            {appContent}
-          </SolanaWalletProvider>
-        </RainbowKitProvider>
-      </PrivyWagmiProvider>
-    </QueryClientProvider>
-  );
-
-  if (!privyAppId) {
-    return providersWithWagmi;
-  }
-
-  return (
-    <PrivyProvider appId={privyAppId} config={privyConfig}>
-      <PrivyReadyGate>
-        {providersWithPrivyWagmi}
-      </PrivyReadyGate>
-    </PrivyProvider>
   );
 }
 

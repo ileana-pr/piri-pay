@@ -12,10 +12,9 @@ import ChainLogo from './ChainLogo';
 interface EthereumTipProps {
   onBack: () => void;
   receivingAddress: string;
-  hasPrivy?: boolean;
 }
 
-export default function EthereumTip({ onBack, receivingAddress, hasPrivy = false }: EthereumTipProps) {
+export default function EthereumTip({ onBack, receivingAddress }: EthereumTipProps) {
   const [selectedToken, setSelectedToken] = useState<TokenConfig | null>(null);
   const [amount, setAmount] = useState('');
   const [showWalletSelector, setShowWalletSelector] = useState(false);
@@ -585,7 +584,7 @@ export default function EthereumTip({ onBack, receivingAddress, hasPrivy = false
                     <p className="text-lg font-bold text-white">Connect to send</p>
                     <p className="text-sm text-gray-400 mt-1">choose Privy (new to crypto) or your wallet</p>
                   </div>
-                  <ConnectChoice hasPrivy={hasPrivy} variant="compact" isConnecting={isConnecting} />
+                  <ConnectChoice variant="compact" isConnecting={isConnecting} />
                   <button
                     onClick={() => setShowWalletSelector(false)}
                     className="w-full py-2 px-4 text-gray-400 hover:text-white text-sm transition-colors rounded-lg hover:bg-slate-700/50"

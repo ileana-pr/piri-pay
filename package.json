@@ -16,6 +16,7 @@
     "supabase:link": "supabase link",
     "supabase:setup": "./scripts/supabase-setup.sh",
     "dev": "vite",
+    "dev:full": "vercel dev",
     "dev:mobile": "vite --host",
     "build": "vite build",
     "lint": "eslint .",

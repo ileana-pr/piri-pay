@@ -13,10 +13,9 @@ import { BASE_ACCOUNT_CONNECTOR_ID, disconnectAllExcept } from '../lib/pruneWall
 interface BaseTipProps {
   onBack: () => void;
   receivingAddress: string;
-  hasPrivy?: boolean;
 }
 
-export default function BaseTip({ onBack, receivingAddress, hasPrivy = false }: BaseTipProps) {
+export default function BaseTip({ onBack, receivingAddress }: BaseTipProps) {
   const [selectedToken, setSelectedToken] = useState<TokenConfig | null>(null);
   const [amount, setAmount] = useState('');
   const [showWalletSelector, setShowWalletSelector] = useState(false);
@@ -535,7 +534,7 @@ export default function BaseTip({ onBack, receivingAddress, hasPrivy = false }: 
                     <p className="text-lg font-bold text-[#2D0A00]">Connect to send</p>
                     <p className="text-sm text-[#2D0A00]/70 mt-1">choose Privy (new to crypto) or your wallet</p>
                   </div>
-                  <ConnectChoice hasPrivy={hasPrivy} variant="compact" isConnecting={isConnecting} />
+                  <ConnectChoice variant="compact" isConnecting={isConnecting} />
                   <button
                     onClick={() => setShowWalletSelector(false)}
                     className="w-full py-2 px-4 text-sm transition-colors rounded-lg text-[#2D0A00]/50 hover:text-[#2D0A00] hover:bg-piri-base/10"

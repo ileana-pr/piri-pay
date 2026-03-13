@@ -1,50 +1,47 @@
+import { useState } from 'react';
 import { useConnectModal } from '@rainbow-me/rainbowkit';
-import { usePrivy } from '@privy-io/react-auth';
-import { Wallet, Smartphone } from 'lucide-react';
+import { Smartphone } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
-interface ConnectChoiceContentProps {
-  usePrivyLogin: boolean;
-  onPrivyLogin?: () => void;
-  onWalletConnect: () => void;
+interface ConnectChoiceProps {
+  variant?: 'compact' | 'full';
   isConnecting?: boolean;
-  /** compact = two buttons for tip flow; full = page layout for login */
-  variant: 'compact' | 'full';
 }
 
-// shared ui — receives handlers so we can avoid usePrivy when not configured
-function ConnectChoiceContent({
-  usePrivyLogin,
-  onPrivyLogin,
-  onWalletConnect,
-  isConnecting = false,
-  variant,
-}: ConnectChoiceContentProps) {
-  const buttons = (
-    <div className="space-y-4">
-      {/* Privy — email, social, or embedded wallet */}
-      <button
-        type="button"
-        onClick={usePrivyLogin ? onPrivyLogin : undefined}
-        disabled={!usePrivyLogin}
-        className={`w-full p-5 rounded-xl border-2 flex items-center gap-4 transition-colors ${
-          usePrivyLogin
-            ? 'border-piri bg-piri/10 hover:bg-piri/20 cursor-pointer'
-            : 'border-piri/20 bg-piri-cream/50 opacity-60 cursor-not-allowed'
-        }`}
-      >
-        <div className="w-12 h-12 rounded-xl bg-piri/10 flex items-center justify-center shrink-0">
-          <Wallet className="w-6 h-6 text-piri" />
-        </div>
-        <div className="text-left flex-1">
-          <p className="font-bold text-piri">Sign in with Privy</p>
-          <p className="text-xs piri-muted">
-            {usePrivyLogin ? 'email, social, or create wallet' : 'add VITE_PRIVY_APP_ID to enable'}
-          </p>
-        </div>
-      </button>
+/** connect wallet (RainbowKit + SIWE) or email (Supabase magic link) */
+export default function ConnectChoice({ variant = 'compact', isConnecting }: ConnectChoiceProps) {
+  const { openConnectModal: open } = useConnectModal();
+  const onWalletConnect = open ?? (() => {});
 
-      {/* Connect wallet — MetaMask, Coinbase, etc. */}
-      <button
+  const [email, setEmail] = useState('');
+  const [emailSent, setEmailSent] = useState(false);
+  const [emailLoading, setEmailLoading] = useState(false);
+  const [emailError, setEmailError] = useState<string | null>(null);
+
+  const handleEmailSignIn = async () => {
+    const trimmed = email.trim();
+    if (!trimmed || !supabase) {
+      setEmailError(supabase ? 'Enter your email' : 'Auth not configured');
+      return;
+    }
+    setEmailError(null);
+    setEmailLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        email: trimmed,
+        options: { emailRedirectTo: typeof window !== 'undefined' ? window.location.origin : undefined },
+      });
+      if (error) throw error;
+      setEmailSent(true);
+    } catch (e) {
+      setEmailError(e instanceof Error ? e.message : 'Failed to send link');
+    } finally {
+      setEmailLoading(false);
+    }
+  };
+
+  const walletButton = (
+    <button
         type="button"
         onClick={onWalletConnect}
         disabled={isConnecting}
@@ -56,85 +53,86 @@ function ConnectChoiceContent({
         <div className="text-left flex-1">
           <p className="font-bold text-piri">Connect wallet</p>
           <p className="text-xs piri-muted">
-            {isConnecting ? 'Connecting...' : 'MetaMask, Phantom, WalletConnect'}
+            {isConnecting ? 'Connecting...' : 'MetaMask, Coinbase, WalletConnect'}
           </p>
         </div>
       </button>
-    </div>
   );
 
   if (variant === 'compact') {
-    return buttons;
+    return <div className="space-y-4">{walletButton}</div>;
   }
+
+  const fullButtons = (
+    <div className="space-y-4">
+      {/* email magic link */}
+      <div className="flex flex-col gap-2">
+        <div className="flex gap-2">
+          <input
+            type="email"
+            placeholder="you@example.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            disabled={emailSent || !supabase}
+            className="flex-1 px-4 py-3 rounded-xl border-2 border-piri/30 bg-piri-cream font-medium placeholder:piri-muted focus:outline-none focus:border-piri disabled:opacity-60"
+          />
+          <button
+            type="button"
+            onClick={handleEmailSignIn}
+            disabled={emailLoading || emailSent || !supabase}
+            className="px-5 py-3 rounded-xl border-2 border-piri bg-piri/10 hover:bg-piri/20 font-bold text-piri shrink-0 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          >
+            {emailLoading ? 'Sending...' : emailSent ? 'Sent' : 'Email link'}
+          </button>
+        </div>
+        {emailSent && (
+          <p className="text-sm text-piri font-semibold">Check your inbox — click the link to sign in</p>
+        )}
+        {emailError && (
+          <p className="text-sm text-red-600 font-semibold">{emailError}</p>
+        )}
+      </div>
+      {walletButton}
+    </div>
+  );
+
+  // mascot: piri.png; fallback: logo-heart-trans-1000px.png (both in public/logo/)
+  const LOGO_SRC = '/logo/piri.png';
+  const LOGO_FALLBACK = '/logo/logo-heart-trans-1000px.png';
 
   return (
     <div className="piri-page">
       <div className="max-w-lg mx-auto px-4 py-16">
         <div className="text-center mb-12">
+          <div className="flex justify-center mb-6">
+            <div className="w-24 h-24 rounded-2xl flex items-center justify-center overflow-hidden border-2 border-piri-cashapp bg-piri-cream shadow-lg">
+              <img
+                src={LOGO_SRC}
+                alt="Piri"
+                className="w-full h-full object-cover object-top"
+                onError={(e) => {
+                  const img = e.target as HTMLImageElement;
+                  if (img.dataset.fallbackUsed === '1') {
+                    img.style.display = 'none';
+                    const next = img.nextElementSibling;
+                    if (next) (next as HTMLElement).classList.remove('hidden');
+                  } else {
+                    img.dataset.fallbackUsed = '1';
+                    img.src = LOGO_FALLBACK;
+                  }
+                }}
+              />
+              <span className="hidden piri-heading text-3xl font-black text-piri-cashapp" aria-hidden>P</span>
+            </div>
+          </div>
           <h1 className="piri-heading text-4xl font-black mb-3">Sign in to Piri</h1>
           <p className="text-sm piri-muted font-semibold">connect a wallet to create your tip link</p>
         </div>
-        {buttons}
+        {fullButtons}
         <p className="mt-8 text-center text-xs piri-muted">
           you need a wallet to receive tips — we never custody your funds
         </p>
       </div>
     </div>
-  );
-}
-
-// only rendered when PrivyProvider is present — safe to call usePrivy
-function ConnectChoiceWithPrivy({
-  variant,
-  isConnecting,
-}: {
-  variant: 'compact' | 'full';
-  isConnecting?: boolean;
-}) {
-  const { login } = usePrivy();
-  const { openConnectModal: open } = useConnectModal();
-  const onWalletConnect = open ?? (() => {});
-  return (
-    <ConnectChoiceContent
-      usePrivyLogin={true}
-      onPrivyLogin={login}
-      onWalletConnect={onWalletConnect}
-      isConnecting={isConnecting}
-      variant={variant}
-    />
-  );
-}
-
-// when Privy not configured — no usePrivy, only RainbowKit
-function ConnectChoiceNoPrivy({
-  variant,
-  isConnecting,
-}: {
-  variant: 'compact' | 'full';
-  isConnecting?: boolean;
-}) {
-  const { openConnectModal: open } = useConnectModal();
-  const onWalletConnect = open ?? (() => {});
-  return (
-    <ConnectChoiceContent
-      usePrivyLogin={false}
-      onWalletConnect={onWalletConnect}
-      isConnecting={isConnecting}
-      variant={variant}
-    />
-  );
-}
-
-interface ConnectChoiceProps {
-  hasPrivy: boolean;
-  variant?: 'compact' | 'full';
-  isConnecting?: boolean;
-}
-
-export default function ConnectChoice({ hasPrivy, variant = 'compact', isConnecting }: ConnectChoiceProps) {
-  return hasPrivy ? (
-    <ConnectChoiceWithPrivy variant={variant} isConnecting={isConnecting} />
-  ) : (
-    <ConnectChoiceNoPrivy variant={variant} isConnecting={isConnecting} />
   );
 }
