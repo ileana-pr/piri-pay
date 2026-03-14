@@ -130,7 +130,7 @@ export default function ConnectChoice({ variant = 'compact', isConnecting }: Con
         </div>
         {fullButtons}
         <p className="mt-8 text-center text-xs piri-muted">
-          you need a wallet to receive tips — we never custody your funds
+          Piri makes it easy to get paid. Add your payment methods to get started.
         </p>
       </div>
     </div>

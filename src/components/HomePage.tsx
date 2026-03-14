@@ -1,15 +1,16 @@
-import { QrCode, Plus } from 'lucide-react';
+import { QrCode, Plus, LogOut } from 'lucide-react';
 
 interface HomePageProps {
   onCreateProfile: () => void;
   onViewProfile: () => void;
+  onSignOut: () => void;
   hasProfile: boolean;
 }
 
 // logo: Piri character at public/logo/piri.png (home hero)
 const LOGO_SRC = '/logo/piri.png';
 
-export default function HomePage({ onCreateProfile, onViewProfile, hasProfile }: HomePageProps) {
+export default function HomePage({ onCreateProfile, onViewProfile, onSignOut, hasProfile }: HomePageProps) {
   return (
     <div className="piri-page">
       <div className="max-w-lg mx-auto px-4 py-16">
@@ -54,6 +55,14 @@ export default function HomePage({ onCreateProfile, onViewProfile, hasProfile }:
             </button>
           )}
         </div>
+
+        <button
+          onClick={onSignOut}
+          className="mt-8 w-full py-3 flex items-center justify-center gap-2 text-sm font-semibold text-piri-muted hover:text-piri transition-colors"
+        >
+          <LogOut className="w-4 h-4" />
+          Sign out
+        </button>
 
         <div className="mt-12 text-center">
           <p className="text-xs piri-muted">

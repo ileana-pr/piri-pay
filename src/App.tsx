@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useAccount } from 'wagmi';
+import { useAccount, useDisconnect } from 'wagmi';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WagmiProvider } from 'wagmi';
 import { RainbowKitProvider } from '@rainbow-me/rainbowkit';
@@ -13,6 +13,7 @@ import ProfileView from './components/ProfileView';
 import SignInPage from './components/SignInPage';
 import { UserProfile } from './components/ProfileCreation';
 import BrandPage from './components/BrandPage';
+import GettingStartedPage from './components/GettingStartedPage';
 import WalletSignInStep from './components/WalletSignInStep';
 import { createProfile, updateProfile } from './lib/profileApi';
 import { supabase } from './lib/supabase';
@@ -21,6 +22,7 @@ const queryClient = new QueryClient();
 
 // secret brand page — no links from main site; access via /x-piri-brand
 const BRAND_PATH = '/x-piri-brand';
+const GETTING_STARTED_PATH = '/getting-started';
 
 type Page = 'home' | 'create' | 'view' | 'signIn' | 'walletSignIn';
 
@@ -30,6 +32,7 @@ function AppContent() {
   const [pendingPreFillAddress, setPendingPreFillAddress] = useState<string | null>(null);
   const [hasSupabaseSession, setHasSupabaseSession] = useState<boolean | null>(null);
   const { address, isConnected } = useAccount();
+  const { disconnect } = useDisconnect();
 
   const isSignedIn = isConnected || !!hasSupabaseSession;
 
@@ -85,9 +88,10 @@ function AppContent() {
     }
   }, [isSignedIn, hasSupabaseSession, currentPage]);
 
-  // when signed in (email/google): go straight to profile creation (payment methods)
+  // when signed in (email/google): skip home if no profile — go straight to payment options
   useEffect(() => {
-    if (hasSupabaseSession && currentPage === 'signIn') {
+    if (!hasSupabaseSession) return;
+    if (currentPage === 'signIn' || (currentPage === 'home' && !userProfile)) {
       setCurrentPage(userProfile ? 'home' : 'create');
     }
   }, [hasSupabaseSession, currentPage, userProfile]);
@@ -116,6 +120,15 @@ function AppContent() {
   };
   const handleBackToHome = () => {
     setCurrentPage('home');
+  };
+
+  const handleSignOut = async () => {
+    if (supabase) await supabase.auth.signOut();
+    disconnect();
+    localStorage.removeItem('piri-profile');
+    setUserProfile(null);
+    setPendingPreFillAddress(null);
+    setCurrentPage('signIn');
   };
 
   const handleSaveProfile = async (profile: UserProfile) => {
@@ -157,13 +170,14 @@ function AppContent() {
         <HomePage
           onCreateProfile={handleCreateProfile}
           onViewProfile={handleViewProfile}
+          onSignOut={handleSignOut}
           hasProfile={!!userProfile}
         />
       )}
       {currentPage === 'create' && (
         <ProfileCreation
           onSave={handleSaveProfile}
-          onBack={handleBackToHome}
+          onSignOut={handleSignOut}
           initialProfile={
             pendingPreFillAddress
               ? {
@@ -181,6 +195,7 @@ function AppContent() {
           profile={userProfile}
           onBack={handleBackToHome}
           onEdit={handleCreateProfile}
+          onSignOut={handleSignOut}
         />
       )}
     </>
@@ -192,6 +207,9 @@ function App() {
 
   if (path === BRAND_PATH) {
     return <BrandPage />;
+  }
+  if (path === GETTING_STARTED_PATH) {
+    return <GettingStartedPage />;
   }
 
   const appContent = path.startsWith('/tip/') ? (

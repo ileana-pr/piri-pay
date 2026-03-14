@@ -1,6 +1,52 @@
+import { createClient } from '@supabase/supabase-js';
 import { nanoid } from 'nanoid';
-import { supabase } from '../lib/supabase';
-import { validateProfile, type StoredProfile } from '../lib/profileSchema';
+
+const supabase =
+  process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY
+    ? createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, {
+        auth: { persistSession: false },
+      })
+    : null;
+
+interface StoredProfile {
+  ethereumAddress?: string;
+  baseAddress?: string;
+  bitcoinAddress?: string;
+  solanaAddress?: string;
+  cashAppCashtag?: string;
+  venmoUsername?: string;
+  zelleContact?: string;
+  paypalUsername?: string;
+}
+
+function validateProfile(body: unknown): body is StoredProfile {
+  if (!body || typeof body !== 'object') return false;
+  const p = body as Record<string, unknown>;
+  const allowed = [
+    'ethereumAddress',
+    'baseAddress',
+    'bitcoinAddress',
+    'solanaAddress',
+    'cashAppCashtag',
+    'venmoUsername',
+    'zelleContact',
+    'paypalUsername',
+  ];
+  for (const key of Object.keys(p)) {
+    if (!allowed.includes(key) || typeof p[key] !== 'string') return false;
+  }
+  const vals = [
+    p.ethereumAddress,
+    p.baseAddress,
+    p.bitcoinAddress,
+    p.solanaAddress,
+    p.cashAppCashtag,
+    p.venmoUsername,
+    p.zelleContact,
+    p.paypalUsername,
+  ];
+  return vals.some((v) => typeof v === 'string' && String(v).trim().length > 0);
+}
 
 const camelToSnake: Record<string, string> = {
   ethereumAddress: 'ethereum_address',

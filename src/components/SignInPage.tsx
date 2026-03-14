@@ -81,7 +81,7 @@ export default function SignInPage() {
           </div>
           <h1 className="piri-heading text-5xl font-black mb-3">Piri</h1>
           <p className="text-xl font-bold mb-1 text-piri">Pick your flavors. Get paid.</p>
-          <p className="text-sm piri-muted mb-8">Get started — choose how to sign in</p>
+          <p className="text-sm piri-muted mb-5">We make it easy to send and receive money <br /> Add your payment methods to get started. </p>
         </div>
 
         <div className="space-y-4 max-w-sm mx-auto">
@@ -148,10 +148,19 @@ export default function SignInPage() {
             </div>
           </button>
         </div>
+        {/* how it works */}
+        <div className="mt-8 text-center">
+          <a
+            href="/getting-started"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-sm border-2 border-piri-cashapp bg-piri-cashapp/15 text-piri-cashapp hover:bg-piri-cashapp/25 transition-colors"
+          >
+            How Piri Pay works
+          </a>
+        </div>
 
         <div className="mt-12 text-center">
           <p className="text-xs piri-muted">
-            you need a wallet to receive tips — we never custody your funds
+            
           </p>
           <p className="text-xs piri-muted mt-4">
             Made with <span aria-label="love">🍧</span> for{' '}

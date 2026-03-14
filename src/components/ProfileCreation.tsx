@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { createPublicClient, http } from 'viem';
 import { mainnet } from 'viem/chains';
 import { normalize } from 'viem/ens';
-import { ArrowLeft, Plus, Save, Loader2, Trash2 } from 'lucide-react';
+import { ArrowLeft, Plus, Save, Loader2, Trash2, LogOut } from 'lucide-react';
 import ChainLogo from './ChainLogo';
 
 // public client for ENS resolution (reads only, no wallet needed)
@@ -33,13 +33,13 @@ export interface UserProfile {
 
 interface ProfileCreationProps {
   onSave: (profile: UserProfile) => void | Promise<void>;
-  onBack: () => void;
+  onSignOut?: () => void;
   initialProfile?: UserProfile | null;
 }
 
 type Step = 'chains' | 'manual' | 'review';
 
-export default function ProfileCreation({ onSave, onBack, initialProfile }: ProfileCreationProps) {
+export default function ProfileCreation({ onSave, onSignOut, initialProfile }: ProfileCreationProps) {
   const [step, setStep] = useState<Step>('chains');
   const [profile, setProfile] = useState<UserProfile>({
     id: initialProfile?.id,
@@ -242,32 +242,40 @@ export default function ProfileCreation({ onSave, onBack, initialProfile }: Prof
     return (
       <div className="piri-page">
         <div className="max-w-lg mx-auto px-4 py-6">
-          <button onClick={onBack} className="mb-4 flex items-center gap-2 font-semibold text-piri transition-opacity hover:opacity-70 text-sm">
-            <ArrowLeft className="w-4 h-4" /> Back
-          </button>
+          {onSignOut && (
+            <div className="mb-4 flex justify-end">
+              <button onClick={onSignOut} className="flex items-center gap-2 font-semibold text-sm text-piri-muted hover:text-piri transition-opacity">
+                <LogOut className="w-4 h-4" /> Sign out
+              </button>
+            </div>
+          )}
           <div className="text-center mb-6">
             <h1 className="piri-heading text-2xl font-black mb-1">Your flavors</h1>
             <p className="text-sm piri-muted font-semibold">add crypto wallets and fiat apps — Piri supports them all</p>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-4">
             {(['ethereum', 'base', 'bitcoin', 'solana', 'cashapp', 'venmo', 'zelle', 'paypal'] as const).map((chain) => {
               const label = chain === 'ethereum' ? 'Ethereum' : chain === 'base' ? 'Base' : chain === 'bitcoin' ? 'Bitcoin' : chain === 'solana' ? 'Solana' : chain === 'cashapp' ? 'Cash App' : chain === 'venmo' ? 'Venmo' : chain === 'zelle' ? 'Zelle' : 'PayPal';
-              const hint = chain === 'ethereum' ? (profile.ethereumAddress ? `${profile.ethereumAddress.slice(0, 8)}...` : 'ETH or .eth')
-                : chain === 'base' ? (profile.baseAddress ? `${profile.baseAddress.slice(0, 8)}...` : 'ETH or .base')
-                : chain === 'bitcoin' ? (profile.bitcoinAddress ? `${profile.bitcoinAddress.slice(0, 8)}...` : '1... or bc1...')
-                : chain === 'solana' ? (profile.solanaAddress ? `${profile.solanaAddress.slice(0, 8)}...` : 'SOL or .sol')
-                : chain === 'cashapp' ? (profile.cashAppCashtag ? `$${profile.cashAppCashtag}` : '$cashtag')
-                : chain === 'venmo' ? (profile.venmoUsername ? `@${profile.venmoUsername}` : 'username')
-                : chain === 'zelle' ? (profile.zelleContact ? (profile.zelleContact.includes('@') ? profile.zelleContact : profile.zelleContact) : 'email or phone')
-                : (profile.paypalUsername ? profile.paypalUsername : 'paypal.me/username');
+              const hasValue = chain === 'ethereum' ? !!profile.ethereumAddress : chain === 'base' ? !!profile.baseAddress : chain === 'bitcoin' ? !!profile.bitcoinAddress : chain === 'solana' ? !!profile.solanaAddress : chain === 'cashapp' ? !!profile.cashAppCashtag?.trim() : chain === 'venmo' ? !!profile.venmoUsername?.trim() : chain === 'zelle' ? !!profile.zelleContact?.trim() : !!profile.paypalUsername?.trim();
+              const displayValue = chain === 'ethereum' ? profile.ethereumAddress : chain === 'base' ? profile.baseAddress : chain === 'bitcoin' ? profile.bitcoinAddress : chain === 'solana' ? profile.solanaAddress : chain === 'cashapp' ? (profile.cashAppCashtag ? `$${profile.cashAppCashtag}` : '') : chain === 'venmo' ? (profile.venmoUsername ? `@${profile.venmoUsername}` : '') : chain === 'zelle' ? (profile.zelleContact ?? '') : (profile.paypalUsername ? `paypal.me/${profile.paypalUsername}` : '');
+              const addLabel = chain === 'ethereum' ? 'Add ETH' : chain === 'base' ? 'Add Base' : chain === 'bitcoin' ? 'Add BTC' : chain === 'solana' ? 'Add SOL' : chain === 'cashapp' ? 'Add $cashtag' : chain === 'venmo' ? 'Add Venmo' : chain === 'zelle' ? 'Add Zelle' : 'Add PayPal';
               return (
-                <button key={chain} onClick={() => handlePickChain(chain)} className={`relative p-4 rounded-xl border-2 flex flex-col items-center justify-center gap-2 transition-all hover:scale-[1.02] aspect-square min-h-0 shadow-sm piri-card ${flavorCard(chain)}`}>
-                  <Plus className="absolute top-2 right-2 w-4 h-4 piri-muted" />
-                  <div className={`w-10 h-10 rounded-xl border-2 flex items-center justify-center ${flavorLogoBox(chain)}`}>
-                    <ChainLogo chain={chain} size={28} />
+                <button
+                  key={chain}
+                  onClick={() => handlePickChain(chain)}
+                  className={`w-full p-4 rounded-xl border-2 flex items-center gap-4 transition-all hover:scale-[1.01] shadow-sm piri-card ${flavorCard(chain)} text-left`}
+                >
+                  <div className={`w-12 h-12 rounded-xl border-2 flex items-center justify-center shrink-0 ${flavorLogoBox(chain)}`}>
+                    <ChainLogo chain={chain} size={24} />
                   </div>
-                  <span className="font-bold text-sm text-piri">{label}</span>
-                  <span className="text-xs piri-muted truncate w-full text-center font-semibold">{hint}</span>
+                  <div className="flex-1 min-w-0">
+                    <span className="font-bold text-piri block">{label}</span>
+                    {hasValue ? (
+                      <code className="text-sm font-semibold text-piri truncate block">{displayValue}</code>
+                    ) : (
+                      <span className="text-sm font-semibold piri-muted flex items-center gap-1"><Plus className="w-4 h-4" /> {addLabel}</span>
+                    )}
+                  </div>
                 </button>
               );
             })}
@@ -453,7 +461,7 @@ export default function ProfileCreation({ onSave, onBack, initialProfile }: Prof
               {profile.baseAddress ? <code className="text-piri text-sm break-all font-semibold">{profile.baseAddress}</code> : <button onClick={() => handlePickChain('base')} className="flex items-center gap-1 text-sm font-semibold piri-link"><Plus className="w-4 h-4" /> Add Base</button>}
             </div>
           </div>
-          <div className="piri-card rounded-xl border-2 piri-card-uva shadow-sm">
+          <div className="piri-card rounded-xl border-2 piri-card-bitcoin shadow-sm">
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between mb-2">
                 <span className="font-bold text-piri flex items-center gap-2"><ChainLogo chain="bitcoin" size={20} /> Bitcoin</span>
@@ -465,7 +473,7 @@ export default function ProfileCreation({ onSave, onBack, initialProfile }: Prof
               {profile.bitcoinAddress ? <code className="text-piri text-sm break-all font-semibold">{profile.bitcoinAddress}</code> : <button onClick={() => handlePickChain('bitcoin')} className="flex items-center gap-1 text-sm font-semibold piri-link"><Plus className="w-4 h-4" /> Add BTC</button>}
             </div>
           </div>
-          <div className="piri-card rounded-xl border-2 piri-card-parcha shadow-sm">
+          <div className="piri-card rounded-xl border-2 piri-card-solana shadow-sm">
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between mb-2">
                 <span className="font-bold text-piri flex items-center gap-2"><ChainLogo chain="solana" size={20} /> Solana</span>
@@ -477,7 +485,7 @@ export default function ProfileCreation({ onSave, onBack, initialProfile }: Prof
               {profile.solanaAddress ? <code className="text-piri text-sm break-all font-semibold">{profile.solanaAddress}</code> : <button onClick={() => handlePickChain('solana')} className="flex items-center gap-1 text-sm font-semibold piri-link"><Plus className="w-4 h-4" /> Add SOL</button>}
             </div>
           </div>
-          <div className="piri-card rounded-xl border-2 piri-card-fresa shadow-sm">
+          <div className="piri-card rounded-xl border-2 piri-card-cashapp shadow-sm">
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between mb-2">
                 <span className="font-bold text-piri flex items-center gap-2"><ChainLogo chain="cashapp" size={20} /> Cash App</span>
@@ -489,7 +497,7 @@ export default function ProfileCreation({ onSave, onBack, initialProfile }: Prof
               {profile.cashAppCashtag ? <code className="text-piri text-sm font-semibold">${profile.cashAppCashtag}</code> : <button onClick={() => handlePickChain('cashapp')} className="flex items-center gap-1 text-sm font-semibold piri-link"><Plus className="w-4 h-4" /> Add $cashtag</button>}
             </div>
           </div>
-          <div className="piri-card rounded-xl border-2 piri-card-tamarindo shadow-sm">
+          <div className="piri-card rounded-xl border-2 piri-card-venmo shadow-sm">
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between mb-2">
                 <span className="font-bold text-piri flex items-center gap-2"><ChainLogo chain="venmo" size={20} /> Venmo</span>

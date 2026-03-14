@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, QrCode, Copy, Check, Pencil, Download, Loader2 } from 'lucide-react';
+import { ArrowLeft, QrCode, Copy, Check, Pencil, Download, Loader2, LogOut } from 'lucide-react';
 import QRCode from 'qrcode';
 import { UserProfile } from './ProfileCreation';
 import { encodeProfileForUrl } from '../lib/profileUrl';
@@ -16,9 +16,10 @@ interface ProfileViewProps {
   profile: UserProfile;
   onBack: () => void;
   onEdit?: () => void;
+  onSignOut?: () => void;
 }
 
-export default function ProfileView({ profile, onBack, onEdit }: ProfileViewProps) {
+export default function ProfileView({ profile, onBack, onEdit, onSignOut }: ProfileViewProps) {
   const [qrDataUrl, setQrDataUrl] = useState('');
   const [copied, setCopied] = useState<string | null>(null);
   const [shareExport, setShareExport] = useState<ShareImageExport | null>(null);
@@ -94,11 +95,18 @@ export default function ProfileView({ profile, onBack, onEdit }: ProfileViewProp
           <button onClick={onBack} className="flex items-center gap-2 font-semibold text-piri transition-opacity hover:opacity-70">
             <ArrowLeft className="w-5 h-5" /> Back
           </button>
-          {onEdit && (
-            <button onClick={onEdit} className="flex items-center gap-2 font-semibold text-sm text-piri transition-opacity hover:opacity-70">
-              <Pencil className="w-4 h-4" /> Edit
-            </button>
-          )}
+          <div className="flex items-center gap-4">
+            {onEdit && (
+              <button onClick={onEdit} className="flex items-center gap-2 font-semibold text-sm text-piri transition-opacity hover:opacity-70">
+                <Pencil className="w-4 h-4" /> Edit
+              </button>
+            )}
+            {onSignOut && (
+              <button onClick={onSignOut} className="flex items-center gap-2 font-semibold text-sm text-piri-muted hover:text-piri transition-opacity">
+                <LogOut className="w-4 h-4" /> Sign out
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="text-center mb-8">
