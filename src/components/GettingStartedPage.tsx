@@ -34,6 +34,16 @@ export default function GettingStartedPage() {
         rel="stylesheet"
       />
 
+      <div className="max-w-3xl mx-auto mb-6">
+        <a
+          href="/"
+          className="inline-flex items-center gap-2 font-semibold transition-opacity hover:opacity-70"
+          style={{ color: '#14B8A6' }}
+        >
+          ← Back to login
+        </a>
+      </div>
+
       {/* header — same vibe as BrandPage */}
       <div className="text-center mb-10">
         <p
@@ -181,7 +191,7 @@ export default function GettingStartedPage() {
             <li className="flex gap-2">
               <span>✅</span>
               <span className="opacity-90">
-                Double-check addresses when you add them—crypto sent to the wrong address
+                Double-check addresses when you add them—cash sent to the wrong name or address
                 can&apos;t be undone.
               </span>
             </li>
