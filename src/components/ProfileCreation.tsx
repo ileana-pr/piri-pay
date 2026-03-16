@@ -39,7 +39,7 @@ interface ProfileCreationProps {
   initialProfile?: UserProfile | null;
 }
 
-type Step = 'chains' | 'manual' | 'review';
+type Step = 'chains' | 'manual';
 
 export default function ProfileCreation({ onSave, onSignOut, connectedWalletAddress, initialProfile }: ProfileCreationProps) {
   const [step, setStep] = useState<Step>('chains');
@@ -128,7 +128,7 @@ export default function ProfileCreation({ onSave, onSignOut, connectedWalletAddr
       setManualAddress('');
       setResolvedAddress(null);
       setResolveError(null);
-      setStep('review');
+      setStep('chains');
       return;
     }
     // venmo: store username without @, lowercase
@@ -139,7 +139,7 @@ export default function ProfileCreation({ onSave, onSignOut, connectedWalletAddr
       setManualAddress('');
       setResolvedAddress(null);
       setResolveError(null);
-      setStep('review');
+      setStep('chains');
       return;
     }
     // zelle: store email or phone as-is (trimmed)
@@ -149,7 +149,7 @@ export default function ProfileCreation({ onSave, onSignOut, connectedWalletAddr
       setManualAddress('');
       setResolvedAddress(null);
       setResolveError(null);
-      setStep('review');
+      setStep('chains');
       return;
     }
     // paypal: accept paypal.me/johndoe, @johndoe, or johndoe; store username only, lowercase
@@ -164,7 +164,7 @@ export default function ProfileCreation({ onSave, onSignOut, connectedWalletAddr
       setManualAddress('');
       setResolvedAddress(null);
       setResolveError(null);
-      setStep('review');
+      setStep('chains');
       return;
     }
     const looksLikeDomain = trimmed.toLowerCase().endsWith('.base') || trimmed.toLowerCase().endsWith('.eth') || trimmed.toLowerCase().endsWith('.sol') || trimmed.toLowerCase().includes('.base');
@@ -192,7 +192,7 @@ export default function ProfileCreation({ onSave, onSignOut, connectedWalletAddr
     setManualAddress('');
     setResolvedAddress(null);
     setResolveError(null);
-    setStep('review');
+    setStep('chains');
   };
 
   const handleFinalSave = async () => {
@@ -224,10 +224,8 @@ export default function ProfileCreation({ onSave, onSignOut, connectedWalletAddr
   // flavor styling per method (no flavor names in UI)
   const flavorCard = (ch: typeof editingChain) =>
     ch === 'ethereum' ? 'piri-card-ethereum' : ch === 'base' ? 'piri-card-base' : ch === 'bitcoin' ? 'piri-card-bitcoin' : ch === 'solana' ? 'piri-card-solana' : ch === 'cashapp' ? 'piri-card-cashapp' : ch === 'venmo' ? 'piri-card-venmo' : ch === 'zelle' ? 'piri-card-zelle' : 'piri-card-paypal';
-  const flavorLogoBox = (ch: typeof editingChain) =>
-    ch === 'ethereum' ? 'border-piri-ethereum bg-piri-ethereum/20' : ch === 'base' ? 'border-piri-base bg-piri-base/20' : ch === 'bitcoin' ? 'border-piri-bitcoin bg-piri-bitcoin/20' : ch === 'solana' ? 'border-piri-solana bg-piri-solana/20' : ch === 'cashapp' ? 'border-piri-cashapp bg-piri-cashapp/20' : ch === 'venmo' ? 'border-piri-venmo bg-piri-venmo/20' : ch === 'zelle' ? 'border-piri-zelle bg-piri-zelle/20' : 'border-piri-paypal bg-piri-paypal/20';
 
-  // ─── step 1: pick a chain to add or edit ───
+  // ─── step 1: your flavors (add/edit, then save all) ───
   if (step === 'chains') {
     return (
       <div className="piri-page">
@@ -250,31 +248,37 @@ export default function ProfileCreation({ onSave, onSignOut, connectedWalletAddr
               const displayValue = chain === 'ethereum' ? profile.ethereumAddress : chain === 'base' ? profile.baseAddress : chain === 'bitcoin' ? profile.bitcoinAddress : chain === 'solana' ? profile.solanaAddress : chain === 'cashapp' ? (profile.cashAppCashtag ? `$${profile.cashAppCashtag}` : '') : chain === 'venmo' ? (profile.venmoUsername ? `@${profile.venmoUsername}` : '') : chain === 'zelle' ? (profile.zelleContact ?? '') : (profile.paypalUsername ? `paypal.me/${profile.paypalUsername}` : '');
               const addLabel = chain === 'ethereum' ? 'Add ETH' : chain === 'base' ? 'Add Base' : chain === 'bitcoin' ? 'Add BTC' : chain === 'solana' ? 'Add SOL' : chain === 'cashapp' ? 'Add $cashtag' : chain === 'venmo' ? 'Add Venmo' : chain === 'zelle' ? 'Add Zelle' : 'Add PayPal';
               return (
-                <button
-                  key={chain}
-                  onClick={() => handlePickChain(chain)}
-                  className={`w-full p-4 rounded-xl border-2 flex items-center gap-4 transition-all hover:scale-[1.01] shadow-sm piri-card ${flavorCard(chain)} text-left`}
-                >
-                  <div className={`w-12 h-12 rounded-xl border-2 flex items-center justify-center shrink-0 ${flavorLogoBox(chain)}`}>
-                    <ChainLogo chain={chain} size={24} />
+                <div key={chain} className={`piri-card rounded-xl border-2 p-4 shadow-sm ${flavorCard(chain)}`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-bold text-piri flex items-center gap-2"><ChainLogo chain={chain} size={20} /> {label}</span>
+                    <div className="flex items-center gap-2">
+                      {hasValue && <button type="button" onClick={(e) => { e.stopPropagation(); removePayment(chain); }} className="text-xs font-semibold text-red-600 hover:underline flex items-center gap-1" title="Remove"><Trash2 className="w-3.5 h-3.5" /> Remove</button>}
+                      <button type="button" onClick={() => handlePickChain(chain)} className="text-xs font-semibold piri-link">{hasValue ? 'Edit' : 'Add'}</button>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <span className="font-bold text-piri block">{label}</span>
-                    {hasValue ? (
-                      <code className="text-sm font-semibold text-piri truncate block">{displayValue}</code>
-                    ) : (
-                      <span className="text-sm font-semibold piri-muted flex items-center gap-1"><Plus className="w-4 h-4" /> {addLabel}</span>
-                    )}
-                  </div>
-                </button>
+                  {hasValue ? <code className="text-piri text-sm break-all font-semibold">{displayValue}</code> : <button type="button" onClick={() => handlePickChain(chain)} className="flex items-center gap-1 text-sm font-semibold piri-link"><Plus className="w-4 h-4" /> {addLabel}</button>}
+                </div>
               );
             })}
           </div>
+          {saveError && (
+            <div className="mt-4 rounded-xl p-4 border-2 border-red-400 bg-red-50">
+              <p className="text-sm font-semibold text-red-700">{saveError}</p>
+            </div>
+          )}
           {hasAnyAddress && (
-            <button onClick={() => setStep('review')} className="w-full mt-5 py-3 rounded-xl font-bold text-sm piri-btn-primary">
-              Review & Save
+            <button onClick={handleFinalSave} disabled={isSaving} className="w-full mt-5 py-3 rounded-xl font-bold text-sm piri-btn-primary disabled:opacity-40 flex items-center justify-center gap-2">
+              {isSaving ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</> : <><Save className="w-4 h-4" /> Save all</>}
             </button>
           )}
+          {!hasAnyAddress && <p className="text-center text-sm piri-muted font-semibold mt-4">add at least one to continue</p>}
+          <div className="mt-12 text-center">
+            <p className="text-xs font-semibold piri-muted">
+              Made with <span aria-label="love">🍧</span> for <a href="https://x.com/homebasedotlove" target="_blank" rel="noopener noreferrer" className="piri-link">Home Base</a>
+              {' · ETH Denver 2026 · '}
+              <a href="https://x.com/adigitaltati" target="_blank" rel="noopener noreferrer" className="piri-link">@adigitaltati</a>
+            </p>
+          </div>
         </div>
       </div>
     );
@@ -449,132 +453,5 @@ export default function ProfileCreation({ onSave, onSignOut, connectedWalletAddr
     );
   }
 
-  // ─── step 3: review & save ───
-  return (
-    <div className="piri-page">
-      <div className="max-w-lg mx-auto px-4 py-12">
-        <form onSubmit={(e) => { e.preventDefault(); if (hasAnyAddress && !isSaving) handleFinalSave(); }} className="space-y-0">
-        <div className="text-center mb-10">
-          <h1 className="piri-heading text-3xl font-black mb-2">Review your Piri</h1>
-          <p className="text-sm piri-muted font-semibold">where you'll get paid — crypto & fiat</p>
-        </div>
-        <div className="space-y-4 mb-8">
-          <div className="piri-card rounded-xl border-2 piri-card-ethereum shadow-sm">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between mb-2">
-                <span className="font-bold text-piri flex items-center gap-2"><ChainLogo chain="ethereum" size={20} /> Ethereum</span>
-                <div className="flex items-center gap-2">
-                  {profile.ethereumAddress && <button type="button" onClick={() => removePayment('ethereum')} className="text-xs font-semibold text-red-600 hover:underline flex items-center gap-1" title="Remove"><Trash2 className="w-3.5 h-3.5" /> Remove</button>}
-                  <button type="button" onClick={() => handlePickChain('ethereum')} className="text-xs font-semibold piri-link">{profile.ethereumAddress ? 'Edit' : 'Add'}</button>
-                </div>
-              </div>
-              {profile.ethereumAddress ? <code className="text-piri text-sm break-all font-semibold">{profile.ethereumAddress}</code> : <button type="button" onClick={() => handlePickChain('ethereum')} className="flex items-center gap-1 text-sm font-semibold piri-link"><Plus className="w-4 h-4" /> Add ETH</button>}
-            </div>
-          </div>
-          <div className="piri-card rounded-xl border-2 piri-card-base shadow-sm">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between mb-2">
-                <span className="font-bold text-piri flex items-center gap-2"><ChainLogo chain="base" size={20} /> Base</span>
-                <div className="flex items-center gap-2">
-                  {profile.baseAddress && <button type="button" onClick={() => removePayment('base')} className="text-xs font-semibold text-red-600 hover:underline flex items-center gap-1"><Trash2 className="w-3.5 h-3.5" /> Remove</button>}
-                  <button type="button" onClick={() => handlePickChain('base')} className="text-xs font-semibold piri-link">{profile.baseAddress ? 'Edit' : 'Add'}</button>
-                </div>
-              </div>
-              {profile.baseAddress ? <code className="text-piri text-sm break-all font-semibold">{profile.baseAddress}</code> : <button type="button" onClick={() => handlePickChain('base')} className="flex items-center gap-1 text-sm font-semibold piri-link"><Plus className="w-4 h-4" /> Add Base</button>}
-            </div>
-          </div>
-          <div className="piri-card rounded-xl border-2 piri-card-bitcoin shadow-sm">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between mb-2">
-                <span className="font-bold text-piri flex items-center gap-2"><ChainLogo chain="bitcoin" size={20} /> Bitcoin</span>
-                <div className="flex items-center gap-2">
-                  {profile.bitcoinAddress && <button type="button" onClick={() => removePayment('bitcoin')} className="text-xs font-semibold text-red-600 hover:underline flex items-center gap-1"><Trash2 className="w-3.5 h-3.5" /> Remove</button>}
-                  <button type="button" onClick={() => handlePickChain('bitcoin')} className="text-xs font-semibold piri-link">{profile.bitcoinAddress ? 'Edit' : 'Add'}</button>
-                </div>
-              </div>
-              {profile.bitcoinAddress ? <code className="text-piri text-sm break-all font-semibold">{profile.bitcoinAddress}</code> : <button type="button" onClick={() => handlePickChain('bitcoin')} className="flex items-center gap-1 text-sm font-semibold piri-link"><Plus className="w-4 h-4" /> Add BTC</button>}
-            </div>
-          </div>
-          <div className="piri-card rounded-xl border-2 piri-card-solana shadow-sm">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between mb-2">
-                <span className="font-bold text-piri flex items-center gap-2"><ChainLogo chain="solana" size={20} /> Solana</span>
-                <div className="flex items-center gap-2">
-                  {profile.solanaAddress && <button type="button" onClick={() => removePayment('solana')} className="text-xs font-semibold text-red-600 hover:underline flex items-center gap-1"><Trash2 className="w-3.5 h-3.5" /> Remove</button>}
-                  <button type="button" onClick={() => handlePickChain('solana')} className="text-xs font-semibold piri-link">{profile.solanaAddress ? 'Edit' : 'Add'}</button>
-                </div>
-              </div>
-              {profile.solanaAddress ? <code className="text-piri text-sm break-all font-semibold">{profile.solanaAddress}</code> : <button type="button" onClick={() => handlePickChain('solana')} className="flex items-center gap-1 text-sm font-semibold piri-link"><Plus className="w-4 h-4" /> Add SOL</button>}
-            </div>
-          </div>
-          <div className="piri-card rounded-xl border-2 piri-card-cashapp shadow-sm">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between mb-2">
-                <span className="font-bold text-piri flex items-center gap-2"><ChainLogo chain="cashapp" size={20} /> Cash App</span>
-                <div className="flex items-center gap-2">
-                  {profile.cashAppCashtag && <button type="button" onClick={() => removePayment('cashapp')} className="text-xs font-semibold text-red-600 hover:underline flex items-center gap-1"><Trash2 className="w-3.5 h-3.5" /> Remove</button>}
-                  <button type="button" onClick={() => handlePickChain('cashapp')} className="text-xs font-semibold piri-link">{profile.cashAppCashtag ? 'Edit' : 'Add'}</button>
-                </div>
-              </div>
-              {profile.cashAppCashtag ? <code className="text-piri text-sm font-semibold">${profile.cashAppCashtag}</code> : <button type="button" onClick={() => handlePickChain('cashapp')} className="flex items-center gap-1 text-sm font-semibold piri-link"><Plus className="w-4 h-4" /> Add $cashtag</button>}
-            </div>
-          </div>
-          <div className="piri-card rounded-xl border-2 piri-card-venmo shadow-sm">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between mb-2">
-                <span className="font-bold text-piri flex items-center gap-2"><ChainLogo chain="venmo" size={20} /> Venmo</span>
-                <div className="flex items-center gap-2">
-                  {profile.venmoUsername && <button type="button" onClick={() => removePayment('venmo')} className="text-xs font-semibold text-red-600 hover:underline flex items-center gap-1"><Trash2 className="w-3.5 h-3.5" /> Remove</button>}
-                  <button type="button" onClick={() => handlePickChain('venmo')} className="text-xs font-semibold piri-link">{profile.venmoUsername ? 'Edit' : 'Add'}</button>
-                </div>
-              </div>
-              {profile.venmoUsername ? <code className="text-piri text-sm font-semibold">@{profile.venmoUsername}</code> : <button type="button" onClick={() => handlePickChain('venmo')} className="flex items-center gap-1 text-sm font-semibold piri-link"><Plus className="w-4 h-4" /> Add Venmo</button>}
-            </div>
-          </div>
-          <div className="piri-card rounded-xl border-2 piri-card-zelle shadow-sm">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between mb-2">
-                <span className="font-bold text-piri flex items-center gap-2"><ChainLogo chain="zelle" size={20} /> Zelle</span>
-                <div className="flex items-center gap-2">
-                  {profile.zelleContact && <button type="button" onClick={() => removePayment('zelle')} className="text-xs font-semibold text-red-600 hover:underline flex items-center gap-1"><Trash2 className="w-3.5 h-3.5" /> Remove</button>}
-                  <button type="button" onClick={() => handlePickChain('zelle')} className="text-xs font-semibold piri-link">{profile.zelleContact ? 'Edit' : 'Add'}</button>
-                </div>
-              </div>
-              {profile.zelleContact ? <code className="text-piri text-sm font-semibold break-all">{profile.zelleContact}</code> : <button type="button" onClick={() => handlePickChain('zelle')} className="flex items-center gap-1 text-sm font-semibold piri-link"><Plus className="w-4 h-4" /> Add Zelle</button>}
-            </div>
-          </div>
-          <div className="piri-card rounded-xl border-2 piri-card-paypal shadow-sm">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between mb-2">
-                <span className="font-bold text-piri flex items-center gap-2"><ChainLogo chain="paypal" size={20} /> PayPal</span>
-                <div className="flex items-center gap-2">
-                  {profile.paypalUsername && <button type="button" onClick={() => removePayment('paypal')} className="text-xs font-semibold text-red-600 hover:underline flex items-center gap-1"><Trash2 className="w-3.5 h-3.5" /> Remove</button>}
-                  <button type="button" onClick={() => handlePickChain('paypal')} className="text-xs font-semibold piri-link">{profile.paypalUsername ? 'Edit' : 'Add'}</button>
-                </div>
-              </div>
-              {profile.paypalUsername ? <code className="text-piri text-sm font-semibold">paypal.me/{profile.paypalUsername}</code> : <button type="button" onClick={() => handlePickChain('paypal')} className="flex items-center gap-1 text-sm font-semibold piri-link"><Plus className="w-4 h-4" /> Add PayPal</button>}
-            </div>
-          </div>
-        </div>
-        {saveError && (
-          <div className="mb-4 rounded-xl p-4 border-2 border-red-400 bg-red-50">
-            <p className="text-sm font-semibold text-red-700">{saveError}</p>
-            <p className="text-xs text-red-600 mt-1">Check that Supabase is configured and the dev server is running with npm run dev:full</p>
-          </div>
-        )}
-        <button type="submit" disabled={!hasAnyAddress || isSaving} className="w-full py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 piri-btn-primary disabled:opacity-40">
-          {isSaving ? <><Loader2 className="w-5 h-5 animate-spin" /> Saving...</> : <><Save className="w-5 h-5" /> Save & Generate QR Code</>}
-        </button>
-        </form>
-        {!hasAnyAddress && <p className="text-center text-sm piri-muted font-semibold mt-4">add at least one to continue</p>}
-        <div className="mt-12 text-center">
-          <p className="text-xs font-semibold piri-muted">
-            Made with <span aria-label="love">🍧</span> for <a href="https://x.com/homebasedotlove" target="_blank" rel="noopener noreferrer" className="piri-link">Home Base</a>
-            {' · ETH Denver 2026 · '}
-            <a href="https://x.com/adigitaltati" target="_blank" rel="noopener noreferrer" className="piri-link">@adigitaltati</a>
-          </p>
-        </div>
-      </div>
-    </div>
-  );
+  return null;
 }

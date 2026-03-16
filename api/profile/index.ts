@@ -126,6 +126,20 @@ export async function GET(request: Request) {
     if (authError || !user) {
       return Response.json({ error: 'Invalid or expired session' }, { status: 401 });
     }
+    // for google/email: resolve by email first so one email = one profile (avoids duplicate users when supabase creates multiple auth users for same email)
+    const realEmail = user.email?.trim();
+    if (realEmail && !isWalletEmail(realEmail)) {
+      const escaped = realEmail.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_');
+      const { data: byEmail } = await supabase.from('profiles').select('*').ilike('email', escaped).limit(1).maybeSingle();
+      if (byEmail) {
+        const existing = byEmail as Record<string, unknown>;
+        if (existing.user_id !== user.id) {
+          await supabase.from('profiles').update({ user_id: user.id }).eq('id', existing.id);
+        }
+        const profile = rowToProfile(existing);
+        return Response.json({ id: existing.id, ...profile });
+      }
+    }
     query = query.eq('user_id', user.id);
   } else {
     return Response.json(
@@ -139,33 +153,7 @@ export async function GET(request: Request) {
     console.error('Supabase get profile error:', error);
     return Response.json({ error: 'Failed to fetch profile' }, { status: 500 });
   }
-  let data = queryData;
-  // auto-create empty profile if none exists (same flow for all sign-in methods)
-  if (!data) {
-    if (token) {
-      const { data: { user } } = await supabase.auth.getUser(token);
-      if (user) {
-        const id = nanoid(10);
-        const row: Record<string, unknown> = { id, user_id: user.id };
-        // never put wallet synthetic email in profiles — only real emails (google/email sign-in)
-        if (user.email?.trim() && !isWalletEmail(user.email)) row.email = user.email.trim();
-        // wallet users (SIWE): verified address goes in owner_address, never in email
-        if (user.user_metadata?.wallet_address) row.owner_address = String(user.user_metadata.wallet_address).trim();
-        const { error: insertErr } = await supabase.from('profiles').insert(row);
-        if (!insertErr) {
-          const { data: created } = await supabase.from('profiles').select('*').eq('id', id).single();
-          data = created;
-        }
-      }
-    } else if (address) {
-      const id = nanoid(10);
-      const { error: insertErr } = await supabase.from('profiles').insert({ id, owner_address: address });
-      if (!insertErr) {
-        const { data: created } = await supabase.from('profiles').select('*').eq('id', id).single();
-        data = created;
-      }
-    }
-  }
+  const data = queryData;
   if (!data) {
     return Response.json({ error: 'Profile not found' }, { status: 404 });
   }
