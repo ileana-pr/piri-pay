@@ -1,9 +1,19 @@
+import { config } from 'dotenv';
+import path from 'path';
+
+// load .env.local from project root (cwd when you run vercel dev)
+config({ path: path.join(process.cwd(), '.env.local') });
+config({ path: path.join(process.cwd(), '.env') });
+
 import { createClient } from '@supabase/supabase-js';
 import { nanoid } from 'nanoid';
 
+const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
 const supabase =
-  process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY
-    ? createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, {
+  supabaseUrl && supabaseKey
+    ? createClient(supabaseUrl, supabaseKey, {
         auth: { persistSession: false },
       })
     : null;
@@ -31,9 +41,12 @@ function validateProfile(body: unknown): body is StoredProfile {
     'venmoUsername',
     'zelleContact',
     'paypalUsername',
+    'ownerAddress', // wallet sign-in identity, not a payment method
   ];
   for (const key of Object.keys(p)) {
-    if (!allowed.includes(key) || typeof p[key] !== 'string') return false;
+    if (!allowed.includes(key)) return false;
+    if (key !== 'ownerAddress' && typeof p[key] !== 'string') return false;
+    if (key === 'ownerAddress' && p[key] != null && typeof p[key] !== 'string') return false;
   }
   const vals = [
     p.ethereumAddress,
@@ -68,12 +81,103 @@ function toRow(profile: StoredProfile): Record<string, string | null> {
   return row;
 }
 
+const snakeToCamel: Record<string, string> = {
+  ethereum_address: 'ethereumAddress',
+  base_address: 'baseAddress',
+  bitcoin_address: 'bitcoinAddress',
+  solana_address: 'solanaAddress',
+  cash_app_cashtag: 'cashAppCashtag',
+  venmo_username: 'venmoUsername',
+  zelle_contact: 'zelleContact',
+  paypal_username: 'paypalUsername',
+};
+
+function rowToProfile(row: Record<string, unknown>): Record<string, string | undefined> {
+  const out: Record<string, string | undefined> = {};
+  for (const [k, v] of Object.entries(row)) {
+    if (k === 'id' || k === 'created_at' || k === 'user_id' || k === 'owner_address' || k === 'email') continue;
+    const key = snakeToCamel[k] ?? k;
+    out[key] = typeof v === 'string' ? v : undefined;
+  }
+  return out;
+}
+
+/** GET /api/profile — fetch by ?address=0x... OR by Authorization: Bearer <token> (user_id) */
+export async function GET(request: Request) {
+  if (!supabase) {
+    return Response.json({ error: 'Storage not configured' }, { status: 503 });
+  }
+  const url = new URL(request.url);
+  const address = url.searchParams.get('address')?.trim();
+  const authHeader = request.headers.get('Authorization');
+  const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
+
+  let query = supabase.from('profiles').select('*');
+  if (address && address.length >= 10) {
+    query = query.ilike('owner_address', address);
+  } else if (token) {
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !user) {
+      return Response.json({ error: 'Invalid or expired session' }, { status: 401 });
+    }
+    query = query.eq('user_id', user.id);
+  } else {
+    return Response.json(
+      { error: 'Provide ?address=0x... or Authorization: Bearer <token>' },
+      { status: 400 }
+    );
+  }
+
+  const { data: queryData, error } = await query.limit(1).maybeSingle();
+  if (error) {
+    console.error('Supabase get profile error:', error);
+    return Response.json({ error: 'Failed to fetch profile' }, { status: 500 });
+  }
+  let data = queryData;
+  // auto-create empty profile if none exists (same flow for all sign-in methods)
+  if (!data) {
+    if (token) {
+      const { data: { user } } = await supabase.auth.getUser(token);
+      if (user) {
+        const id = nanoid(10);
+        const row: Record<string, unknown> = { id, user_id: user.id };
+        if (user.email?.trim()) row.email = user.email.trim();
+        // wallet users (SIWE): verified address is owner, not a payment method
+        if (user.user_metadata?.wallet_address) row.owner_address = String(user.user_metadata.wallet_address).trim();
+        const { error: insertErr } = await supabase.from('profiles').insert(row);
+        if (!insertErr) {
+          const { data: created } = await supabase.from('profiles').select('*').eq('id', id).single();
+          data = created;
+        }
+      }
+    } else if (address) {
+      const id = nanoid(10);
+      const { error: insertErr } = await supabase.from('profiles').insert({ id, owner_address: address });
+      if (!insertErr) {
+        const { data: created } = await supabase.from('profiles').select('*').eq('id', id).single();
+        data = created;
+      }
+    }
+  }
+  if (!data) {
+    return Response.json({ error: 'Profile not found' }, { status: 404 });
+  }
+  const row = data as Record<string, unknown>;
+  const profile = rowToProfile(row);
+  return Response.json({ id: row.id, ...profile });
+}
+
 export async function POST(request: Request) {
   if (!supabase) {
+    const hasUrl = !!supabaseUrl;
+    const hasKey = !!supabaseKey;
+    const hint = !hasUrl || !hasKey
+      ? ` (URL: ${hasUrl ? 'set' : 'missing'}, KEY: ${hasKey ? 'set' : 'missing'}. Use SUPABASE_URL or VITE_SUPABASE_URL, and SUPABASE_SERVICE_ROLE_KEY in .env.local)`
+      : '';
     return Response.json(
       {
         error:
-          'Storage not configured. Add Supabase project and set SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY.',
+          'Storage not configured. Add Supabase project and set SUPABASE_URL (or VITE_SUPABASE_URL), SUPABASE_SERVICE_ROLE_KEY.' + hint,
       },
       { status: 503 }
     );
@@ -97,14 +201,34 @@ export async function POST(request: Request) {
   }
 
   const id = nanoid(10);
-  const profile = body as StoredProfile;
-  const row = { id, ...toRow(profile) };
+  const profile = body as StoredProfile & { ownerAddress?: string };
+  const row: Record<string, unknown> = { id, ...toRow(profile) };
+
+  // link to supabase user when session provided (google/email sign-in)
+  const authHeader = request.headers.get('Authorization');
+  const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
+  if (token) {
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    if (!authError && user) {
+      row.user_id = user.id;
+      if (user.email?.trim()) row.email = user.email.trim();
+    }
+  }
+  // link to wallet owner when provided (wallet sign-in) — separate from payment methods
+  if (profile.ownerAddress?.trim()) row.owner_address = profile.ownerAddress.trim();
 
   const { error } = await supabase.from('profiles').insert(row);
 
   if (error) {
     console.error('Supabase insert error:', error);
-    return Response.json({ error: 'Failed to save profile' }, { status: 500 });
+    return Response.json(
+      {
+        error: 'Failed to save profile',
+        details: error.message,
+        hint: "Ensure the profiles table exists (run 'supabase db push' or apply migrations).",
+      },
+      { status: 500 }
+    );
   }
 
   return Response.json({ id }, { status: 201 });

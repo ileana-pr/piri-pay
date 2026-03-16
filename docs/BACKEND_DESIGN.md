@@ -208,7 +208,7 @@ create index idx_payment_events_type on public.payment_events(type);
 | File | Change |
 |------|--------|
 | `src/App.tsx` | Remove PrivyProvider, PrivyWagmiProvider; use only WagmiProvider from wagmi, rainbowConfig |
-| `src/components/LoginPage.tsx` | Replace with Supabase Auth UI (magic link, Google) |
+| `src/components/SignInPage.tsx` | Supabase Auth UI (magic link, Google, wallet) |
 | `src/components/ConnectChoice.tsx` | Simplify to single "Connect wallet" button (RainbowKit) |
 | `BaseTip.tsx`, `EthereumTip.tsx`, `TipPage.tsx`, `TipPageLoader.tsx` | Remove `hasPrivy` prop; use only openConnectModal |
 
@@ -260,7 +260,7 @@ npm uninstall @privy-io/react-auth @privy-io/wagmi
 
 1. Remove Privy packages.
 2. Remove PrivyProvider, PrivyWagmiProvider, privyConfig, wagmiConfigPrivy.
-3. Simplify LoginPage to Supabase Auth.
+3. SignInPage handles Supabase Auth (email, Google, wallet).
 4. Simplify ConnectChoice to wallet-only.
 5. Update App.tsx to single provider tree.
 6. Remove `hasPrivy` from all components.

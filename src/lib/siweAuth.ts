@@ -1,59 +1,52 @@
 import { createSiweMessage } from 'viem/siwe';
-import type { Address } from 'viem';
+import { supabase } from './supabase';
 
-const API_BASE = import.meta.env.VITE_API_BASE || '';
+/** run SIWE flow: get challenge, sign, verify, get session. returns true on success. */
+export async function signInWithSiwe(
+  address: string,
+  chainId: number,
+  signMessage: (args: { message: string }) => Promise<`0x${string}`>
+): Promise<boolean> {
+  if (!supabase) return false;
 
-/** fetch nonce from backend */
-export async function fetchSiweNonce(address: string, chainId: number): Promise<string> {
-  const res = await fetch(
-    `${API_BASE}/api/auth/siwe/challenge?address=${encodeURIComponent(address)}&chainId=${chainId}`
-  );
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || 'Failed to get challenge');
-  }
-  const { nonce } = await res.json();
-  if (!nonce) throw new Error('No nonce returned');
-  return nonce;
-}
-
-/** build SIWE message for client to sign */
-export function buildSiweMessage(params: {
-  address: Address;
-  nonce: string;
-  chainId: number;
-}) {
-  const domain = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
+  const domain = typeof window !== 'undefined' && window.location.hostname === 'localhost'
+    ? 'localhost'
+    : (typeof window !== 'undefined' ? window.location.hostname : 'localhost');
   const uri = typeof window !== 'undefined' ? window.location.origin : '';
-  return createSiweMessage({
-    address: params.address,
-    chainId: params.chainId,
+
+  const challengeRes = await fetch(
+    `/api/auth/siwe/challenge?address=${encodeURIComponent(address)}&chainId=${chainId}`
+  );
+  if (!challengeRes.ok) throw new Error('Failed to get challenge');
+  const { nonce } = await challengeRes.json();
+
+  const message = createSiweMessage({
+    address: address as `0x${string}`,
+    chainId,
     domain,
-    nonce: params.nonce,
+    nonce,
     uri,
     version: '1',
     statement: 'Sign in to Piri',
-    issuedAt: new Date(),
-    expirationTime: new Date(Date.now() + 5 * 60 * 1000),
   });
-}
 
-/** verify signature with backend, returns token_hash for verifyOtp */
-export async function verifySiwe(params: {
-  message: string;
-  signature: `0x${string}`;
-  nonce: string;
-}): Promise<{ token_hash: string }> {
-  const res = await fetch(`${API_BASE}/api/auth/siwe/verify`, {
+  const signature = await signMessage({ message });
+
+  const verifyRes = await fetch('/api/auth/siwe/verify', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(params),
+    body: JSON.stringify({ message, signature, nonce }),
   });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
+  if (!verifyRes.ok) {
+    const err = await verifyRes.json().catch(() => ({}));
     throw new Error(err.error || 'Verification failed');
   }
-  const data = await res.json();
-  if (!data.token_hash) throw new Error('No session returned');
-  return data;
+  const { token_hash } = await verifyRes.json();
+
+  const { error } = await supabase.auth.verifyOtp({
+    token_hash,
+    type: 'magiclink',
+  });
+  if (error) throw new Error(error.message);
+  return true;
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useAccount, useDisconnect } from 'wagmi';
+import { useAccount, useDisconnect, useSignMessage, useChainId } from 'wagmi';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WagmiProvider } from 'wagmi';
 import { RainbowKitProvider } from '@rainbow-me/rainbowkit';
@@ -14,8 +14,8 @@ import SignInPage from './components/SignInPage';
 import { UserProfile } from './components/ProfileCreation';
 import BrandPage from './components/BrandPage';
 import GettingStartedPage from './components/GettingStartedPage';
-import WalletSignInStep from './components/WalletSignInStep';
-import { createProfile, updateProfile } from './lib/profileApi';
+import { createProfile, updateProfile, fetchProfileBySession } from './lib/profileApi';
+import { signInWithSiwe } from './lib/siweAuth';
 import { supabase } from './lib/supabase';
 
 const queryClient = new QueryClient();
@@ -24,7 +24,7 @@ const queryClient = new QueryClient();
 const BRAND_PATH = '/x-piri-brand';
 const GETTING_STARTED_PATH = '/getting-started';
 
-type Page = 'home' | 'create' | 'view' | 'signIn' | 'walletSignIn';
+type Page = 'home' | 'create' | 'view' | 'signIn';
 
 function AppContent() {
   const [currentPage, setCurrentPage] = useState<Page>('home');
@@ -33,6 +33,8 @@ function AppContent() {
   const [hasSupabaseSession, setHasSupabaseSession] = useState<boolean | null>(null);
   const { address, isConnected } = useAccount();
   const { disconnect } = useDisconnect();
+  const { signMessageAsync } = useSignMessage();
+  const chainId = useChainId();
 
   const isSignedIn = isConnected || !!hasSupabaseSession;
 
@@ -96,13 +98,62 @@ function AppContent() {
     }
   }, [hasSupabaseSession, currentPage, userProfile]);
 
-  // when wallet connects from sign-in: SIWE first, then profile creation
+  // when signed in (wallet) with no profile: skip home page, go straight to profile creation
   useEffect(() => {
-    if (!isConnected) return;
-    if (currentPage === 'signIn') {
-      setCurrentPage('walletSignIn');
+    if (!isSignedIn || userProfile) return;
+    if (currentPage === 'home') {
+      if (isConnected && address) setPendingPreFillAddress(address);
+      setCurrentPage('create');
     }
-  }, [isConnected, currentPage]);
+  }, [isSignedIn, userProfile, currentPage, isConnected, address]);
+
+  // when supabase session (google/email): fetch profile by user_id
+  useEffect(() => {
+    if (!hasSupabaseSession) return;
+    let cancelled = false;
+    fetchProfileBySession()
+      .then((profile) => {
+        if (cancelled) return;
+        if (profile) {
+          setUserProfile(profile);
+          localStorage.setItem('piri-profile', JSON.stringify(profile));
+          setPendingPreFillAddress(null);
+          const hasPaymentMethods = !!(profile.ethereumAddress || profile.baseAddress || profile.bitcoinAddress || profile.solanaAddress || profile.cashAppCashtag?.trim() || profile.venmoUsername?.trim() || profile.zelleContact?.trim() || profile.paypalUsername?.trim());
+          setCurrentPage(hasPaymentMethods ? 'view' : 'create');
+        } else {
+          setUserProfile(null);
+          localStorage.removeItem('piri-profile');
+          setCurrentPage('create');
+        }
+      })
+      .catch((e) => {
+        if (!cancelled) {
+          console.error('Failed to load profile:', e);
+          setUserProfile(null);
+          setCurrentPage('create');
+        }
+      });
+    return () => { cancelled = true; };
+  }, [hasSupabaseSession]);
+
+  // when wallet connects (and no supabase session): SIWE — sign message, verify, get session
+  // session fetch then loads profile (owner_address from verified address)
+  useEffect(() => {
+    if (!isConnected || !address || hasSupabaseSession || !signMessageAsync) return;
+    let cancelled = false;
+    signInWithSiwe(address, chainId, signMessageAsync)
+      .then(() => {
+        if (cancelled) return;
+        // verifyOtp sets session; onAuthStateChange will update hasSupabaseSession
+      })
+      .catch((e) => {
+        if (!cancelled) {
+          console.error('SIWE failed:', e);
+          disconnect();
+        }
+      });
+    return () => { cancelled = true; };
+  }, [isConnected, address, hasSupabaseSession, signMessageAsync, chainId, disconnect]);
 
   const handleCreateProfile = () => {
     if (!isSignedIn) {
@@ -147,25 +198,13 @@ function AppContent() {
       setCurrentPage('view');
     } catch (e) {
       console.error('Save failed:', e);
-      // fallback: save to localStorage only (legacy behavior)
-      localStorage.setItem('piri-profile', JSON.stringify(profile));
-      setUserProfile(profile);
-      setCurrentPage('view');
+      throw e;
     }
   };
 
   return (
     <>
       {currentPage === 'signIn' && <SignInPage />}
-      {currentPage === 'walletSignIn' && (
-        <WalletSignInStep
-          onSuccess={() => {
-            if (address) setPendingPreFillAddress(address);
-            setCurrentPage('create');
-          }}
-          onBack={() => setCurrentPage('signIn')}
-        />
-      )}
       {currentPage === 'home' && (
         <HomePage
           onCreateProfile={handleCreateProfile}

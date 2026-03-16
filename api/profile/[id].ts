@@ -1,5 +1,33 @@
-import { supabase } from '../lib/supabase';
-import { validateProfile, type StoredProfile } from '../lib/profileSchema';
+import { config } from 'dotenv';
+import path from 'path';
+import { createClient } from '@supabase/supabase-js';
+
+config({ path: path.join(process.cwd(), '.env.local') });
+config({ path: path.join(process.cwd(), '.env') });
+
+const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabase =
+  supabaseUrl && supabaseKey
+    ? createClient(supabaseUrl, supabaseKey, { auth: { persistSession: false } })
+    : null;
+
+// inlined validation (avoids ../lib/profileSchema import resolution issues)
+const ALLOWED_KEYS = [
+  'ethereumAddress', 'baseAddress', 'bitcoinAddress', 'solanaAddress',
+  'cashAppCashtag', 'venmoUsername', 'zelleContact', 'paypalUsername',
+];
+function hasAtLeastOneMethod(p: Record<string, unknown>): boolean {
+  return ALLOWED_KEYS.some((k) => typeof p[k] === 'string' && (p[k] as string).trim().length > 0);
+}
+function validateProfile(body: unknown): body is Record<string, unknown> {
+  if (!body || typeof body !== 'object') return false;
+  const p = body as Record<string, unknown>;
+  for (const key of Object.keys(p)) {
+    if (!ALLOWED_KEYS.includes(key) || typeof p[key] !== 'string') return false;
+  }
+  return hasAtLeastOneMethod(p);
+}
 
 const snakeToCamel: Record<string, string> = {
   ethereum_address: 'ethereumAddress',
@@ -12,14 +40,15 @@ const snakeToCamel: Record<string, string> = {
   paypal_username: 'paypalUsername',
 };
 
-function toProfile(row: Record<string, unknown>): StoredProfile {
+function toProfile(row: Record<string, unknown>): Record<string, string | undefined> {
   const profile: Record<string, string | undefined> = {};
+  const skip = ['id', 'created_at', 'updated_at', 'user_id', 'owner_address', 'email'];
   for (const [k, v] of Object.entries(row)) {
-    if (k === 'id' || k === 'created_at') continue;
+    if (skip.includes(k)) continue;
     const key = snakeToCamel[k] ?? k;
     profile[key] = typeof v === 'string' ? v : undefined;
   }
-  return profile as StoredProfile;
+  return profile;
 }
 
 export async function GET(request: Request) {
@@ -112,7 +141,14 @@ export async function PUT(request: Request) {
       return Response.json({ error: 'Profile not found' }, { status: 404 });
     }
     console.error('Supabase update error:', error);
-    return Response.json({ error: 'Failed to update profile' }, { status: 500 });
+    return Response.json(
+      {
+        error: 'Failed to update profile',
+        details: error.message,
+        hint: "If RLS error, ensure 'profiles allow update' policy exists (run migration).",
+      },
+      { status: 500 }
+    );
   }
 
   return Response.json({ id }, { status: 200 });

@@ -71,7 +71,7 @@ export default function GettingStartedPage() {
         >
           <div
             className="flex items-center justify-center p-8"
-            style={{ background: '#FFF0D6' }}
+            style={{ background: '#FFFBF2' }}
           >
             <div className="relative w-48 h-48 overflow-hidden">
               <img
@@ -191,7 +191,7 @@ export default function GettingStartedPage() {
             <li className="flex gap-2">
               <span>✅</span>
               <span className="opacity-90">
-                Double-check addresses when you add them—cash sent to the wrong name or address
+                Double-check entries when you add your flavors—cash sent to the wrong name or address
                 can&apos;t be undone.
               </span>
             </li>

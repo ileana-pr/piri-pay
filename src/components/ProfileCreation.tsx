@@ -58,6 +58,7 @@ export default function ProfileCreation({ onSave, onSignOut, initialProfile }: P
   const [resolvedAddress, setResolvedAddress] = useState<string | null>(null);
   const [resolveError, setResolveError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const getAddressForChain = (chain: 'ethereum' | 'base' | 'bitcoin' | 'solana' | 'cashapp' | 'venmo' | 'zelle' | 'paypal') =>
     chain === 'ethereum' ? profile.ethereumAddress : chain === 'base' ? profile.baseAddress : chain === 'bitcoin' ? profile.bitcoinAddress : chain === 'solana' ? profile.solanaAddress : chain === 'cashapp' ? (profile.cashAppCashtag ?? '') : chain === 'venmo' ? (profile.venmoUsername ?? '') : chain === 'zelle' ? (profile.zelleContact ?? '') : (profile.paypalUsername ?? '');
@@ -85,32 +86,15 @@ export default function ProfileCreation({ onSave, onSignOut, initialProfile }: P
     setResolveError(null);
 
     try {
-      // .base and .base.eth: try proxy first, fall back to ENS
+      // .base and .base.eth: ENS subdomains on mainnet
       if (domain.endsWith('.base.eth') || domain.endsWith('.base') || domain.includes('.base')) {
         const name = domain.replace(/\.base\.eth$/i, '').replace(/\.base$/i, '').trim();
         if (!name) throw new Error('invalid .base name');
-        try {
-          const res = await fetch(`/api/basename/${encodeURIComponent(name)}`);
-          if (res.ok) {
-            const data = await res.json();
-            const addr = data?.address ?? data?.owner ?? data?.eth_address;
-            if (addr) {
-              setResolvedAddress(addr);
-              return;
-            }
-          }
-        } catch {
-          /* fall through to ENS */
-        }
-        // fallback: .base.eth is an ENS subdomain, try mainnet ENS
-        if (domain.endsWith('.base.eth')) {
-          const address = await ensClient.getEnsAddress({ name: normalize(domain) });
-          if (address) {
-            setResolvedAddress(address);
-            return;
-          }
-        }
-        throw new Error('could not resolve .base name');
+        // .base and .base.eth are ENS subdomains on mainnet
+        const ensName = domain.endsWith('.base.eth') ? domain : `${domain}.eth`;
+        const address = await ensClient.getEnsAddress({ name: normalize(ensName) });
+        if (!address) throw new Error('no address found for this .base name');
+        setResolvedAddress(address);
       } else if (domain.endsWith('.eth')) {
         const address = await ensClient.getEnsAddress({ name: normalize(domain) });
         if (!address) throw new Error('no address found for this ENS name');
@@ -211,8 +195,12 @@ export default function ProfileCreation({ onSave, onSignOut, initialProfile }: P
 
   const handleFinalSave = async () => {
     setIsSaving(true);
+    setSaveError(null);
     try {
       await onSave(profile);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      setSaveError(msg);
     } finally {
       setIsSaving(false);
     }
@@ -305,7 +293,9 @@ export default function ProfileCreation({ onSave, onSignOut, initialProfile }: P
               <p className="text-sm piri-muted font-semibold">your $cashtag (with or without $)</p>
             </div>
             <div className="space-y-6">
-              <input type="text" value={manualAddress} onChange={(e) => setManualAddress(e.target.value)} placeholder="$johndoe or johndoe"
+              <input type="text" value={manualAddress} onChange={(e) => setManualAddress(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); if (manualAddress.trim().replace(/^\$/, '').trim()) handleSaveAddress(); } }}
+                placeholder="$johndoe or johndoe"
                 className="w-full px-4 py-4 rounded-xl border-2 border-piri focus:outline-none focus:ring-2 focus:ring-piri text-piri placeholder-piri-muted text-lg font-semibold" autoFocus />
               <button onClick={handleSaveAddress} disabled={!manualAddress.trim().replace(/^\$/, '').trim()} className="w-full py-4 rounded-xl font-bold text-lg piri-btn-primary disabled:opacity-40 hover:opacity-90 transition-opacity">
                 Save $cashtag
@@ -327,7 +317,9 @@ export default function ProfileCreation({ onSave, onSignOut, initialProfile }: P
               <p className="text-sm piri-muted font-semibold">your Venmo username (with or without @)</p>
             </div>
             <div className="space-y-6">
-              <input type="text" value={manualAddress} onChange={(e) => setManualAddress(e.target.value)} placeholder="@johndoe or johndoe"
+              <input type="text" value={manualAddress} onChange={(e) => setManualAddress(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); if (manualAddress.trim().replace(/^@/, '').trim()) handleSaveAddress(); } }}
+                placeholder="@johndoe or johndoe"
                 className="w-full px-4 py-4 rounded-xl border-2 border-piri focus:outline-none focus:ring-2 focus:ring-piri text-piri placeholder-piri-muted text-lg font-semibold" autoFocus />
               <button onClick={handleSaveAddress} disabled={!manualAddress.trim().replace(/^@/, '').trim()} className="w-full py-4 rounded-xl font-bold text-lg piri-btn-primary disabled:opacity-40 hover:opacity-90 transition-opacity">
                 Save username
@@ -349,7 +341,9 @@ export default function ProfileCreation({ onSave, onSignOut, initialProfile }: P
               <p className="text-sm piri-muted font-semibold">email or phone enrolled with Zelle in your bank app</p>
             </div>
             <div className="space-y-6">
-              <input type="text" value={manualAddress} onChange={(e) => setManualAddress(e.target.value)} placeholder="you@email.com or (555) 123-4567"
+              <input type="text" value={manualAddress} onChange={(e) => setManualAddress(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); if (manualAddress.trim()) handleSaveAddress(); } }}
+                placeholder="you@email.com or (555) 123-4567"
                 className="w-full px-4 py-4 rounded-xl border-2 border-piri focus:outline-none focus:ring-2 focus:ring-piri text-piri placeholder-piri-muted text-lg font-semibold" autoFocus />
               <button onClick={handleSaveAddress} disabled={!manualAddress.trim()} className="w-full py-4 rounded-xl font-bold text-lg piri-btn-primary disabled:opacity-40 hover:opacity-90 transition-opacity">
                 Save Zelle contact
@@ -371,7 +365,9 @@ export default function ProfileCreation({ onSave, onSignOut, initialProfile }: P
               <p className="text-sm piri-muted font-semibold">your paypal.me username (paypal.me/johndoe, @johndoe, or johndoe)</p>
             </div>
             <div className="space-y-6">
-              <input type="text" value={manualAddress} onChange={(e) => setManualAddress(e.target.value)} placeholder="paypal.me/johndoe or @johndoe or johndoe"
+              <input type="text" value={manualAddress} onChange={(e) => setManualAddress(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); if (manualAddress.trim().replace(/^https?:\/\/paypal\.me\//i, '').replace(/^@/, '').trim()) handleSaveAddress(); } }}
+                placeholder="paypal.me/johndoe or @johndoe or johndoe"
                 className="w-full px-4 py-4 rounded-xl border-2 border-piri focus:outline-none focus:ring-2 focus:ring-piri text-piri placeholder-piri-muted text-lg font-semibold" autoFocus />
               <button onClick={handleSaveAddress} disabled={!manualAddress.trim().replace(/^https?:\/\/paypal\.me\//i, '').replace(/^@/, '').trim()} className="w-full py-4 rounded-xl font-bold text-lg piri-btn-primary disabled:opacity-40 hover:opacity-90 transition-opacity">
                 Save PayPal username
@@ -398,6 +394,15 @@ export default function ProfileCreation({ onSave, onSignOut, initialProfile }: P
           </div>
           <div className="space-y-6">
             <input type="text" value={manualAddress} onChange={(e) => { setManualAddress(e.target.value); setResolvedAddress(null); setResolveError(null); }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  const trimmed = manualAddress.trim();
+                  const isDomain = trimmed && isDomainName(trimmed);
+                  if (isDomain && !resolvedAddress) resolveDomain(trimmed.toLowerCase());
+                  else if (trimmed || resolvedAddress) handleSaveAddress();
+                }
+              }}
               placeholder={editingChain === 'ethereum' ? '0x... or name.eth' : editingChain === 'base' ? '0x... or name.base' : editingChain === 'bitcoin' ? 'bc1... or 1... or 3...' : 'Base58 address or name.sol'}
               className="w-full px-4 py-4 rounded-xl border-2 border-piri focus:outline-none focus:ring-2 focus:ring-piri text-piri placeholder-piri-muted text-lg font-semibold" autoFocus />
             {resolvedAddress && (
@@ -432,6 +437,7 @@ export default function ProfileCreation({ onSave, onSignOut, initialProfile }: P
   return (
     <div className="piri-page">
       <div className="max-w-lg mx-auto px-4 py-12">
+        <form onSubmit={(e) => { e.preventDefault(); if (hasAnyAddress && !isSaving) handleFinalSave(); }} className="space-y-0">
         <div className="text-center mb-10">
           <h1 className="piri-heading text-3xl font-black mb-2">Review your Piri</h1>
           <p className="text-sm piri-muted font-semibold">where you'll get paid — crypto & fiat</p>
@@ -442,11 +448,11 @@ export default function ProfileCreation({ onSave, onSignOut, initialProfile }: P
               <div className="flex items-center justify-between mb-2">
                 <span className="font-bold text-piri flex items-center gap-2"><ChainLogo chain="ethereum" size={20} /> Ethereum</span>
                 <div className="flex items-center gap-2">
-                  {profile.ethereumAddress && <button onClick={() => removePayment('ethereum')} className="text-xs font-semibold text-red-600 hover:underline flex items-center gap-1" title="Remove"><Trash2 className="w-3.5 h-3.5" /> Remove</button>}
-                  <button onClick={() => handlePickChain('ethereum')} className="text-xs font-semibold piri-link">{profile.ethereumAddress ? 'Edit' : 'Add'}</button>
+                  {profile.ethereumAddress && <button type="button" onClick={() => removePayment('ethereum')} className="text-xs font-semibold text-red-600 hover:underline flex items-center gap-1" title="Remove"><Trash2 className="w-3.5 h-3.5" /> Remove</button>}
+                  <button type="button" onClick={() => handlePickChain('ethereum')} className="text-xs font-semibold piri-link">{profile.ethereumAddress ? 'Edit' : 'Add'}</button>
                 </div>
               </div>
-              {profile.ethereumAddress ? <code className="text-piri text-sm break-all font-semibold">{profile.ethereumAddress}</code> : <button onClick={() => handlePickChain('ethereum')} className="flex items-center gap-1 text-sm font-semibold piri-link"><Plus className="w-4 h-4" /> Add ETH</button>}
+              {profile.ethereumAddress ? <code className="text-piri text-sm break-all font-semibold">{profile.ethereumAddress}</code> : <button type="button" onClick={() => handlePickChain('ethereum')} className="flex items-center gap-1 text-sm font-semibold piri-link"><Plus className="w-4 h-4" /> Add ETH</button>}
             </div>
           </div>
           <div className="piri-card rounded-xl border-2 piri-card-base shadow-sm">
@@ -454,11 +460,11 @@ export default function ProfileCreation({ onSave, onSignOut, initialProfile }: P
               <div className="flex items-center justify-between mb-2">
                 <span className="font-bold text-piri flex items-center gap-2"><ChainLogo chain="base" size={20} /> Base</span>
                 <div className="flex items-center gap-2">
-                  {profile.baseAddress && <button onClick={() => removePayment('base')} className="text-xs font-semibold text-red-600 hover:underline flex items-center gap-1"><Trash2 className="w-3.5 h-3.5" /> Remove</button>}
-                  <button onClick={() => handlePickChain('base')} className="text-xs font-semibold piri-link">{profile.baseAddress ? 'Edit' : 'Add'}</button>
+                  {profile.baseAddress && <button type="button" onClick={() => removePayment('base')} className="text-xs font-semibold text-red-600 hover:underline flex items-center gap-1"><Trash2 className="w-3.5 h-3.5" /> Remove</button>}
+                  <button type="button" onClick={() => handlePickChain('base')} className="text-xs font-semibold piri-link">{profile.baseAddress ? 'Edit' : 'Add'}</button>
                 </div>
               </div>
-              {profile.baseAddress ? <code className="text-piri text-sm break-all font-semibold">{profile.baseAddress}</code> : <button onClick={() => handlePickChain('base')} className="flex items-center gap-1 text-sm font-semibold piri-link"><Plus className="w-4 h-4" /> Add Base</button>}
+              {profile.baseAddress ? <code className="text-piri text-sm break-all font-semibold">{profile.baseAddress}</code> : <button type="button" onClick={() => handlePickChain('base')} className="flex items-center gap-1 text-sm font-semibold piri-link"><Plus className="w-4 h-4" /> Add Base</button>}
             </div>
           </div>
           <div className="piri-card rounded-xl border-2 piri-card-bitcoin shadow-sm">
@@ -466,11 +472,11 @@ export default function ProfileCreation({ onSave, onSignOut, initialProfile }: P
               <div className="flex items-center justify-between mb-2">
                 <span className="font-bold text-piri flex items-center gap-2"><ChainLogo chain="bitcoin" size={20} /> Bitcoin</span>
                 <div className="flex items-center gap-2">
-                  {profile.bitcoinAddress && <button onClick={() => removePayment('bitcoin')} className="text-xs font-semibold text-red-600 hover:underline flex items-center gap-1"><Trash2 className="w-3.5 h-3.5" /> Remove</button>}
-                  <button onClick={() => handlePickChain('bitcoin')} className="text-xs font-semibold piri-link">{profile.bitcoinAddress ? 'Edit' : 'Add'}</button>
+                  {profile.bitcoinAddress && <button type="button" onClick={() => removePayment('bitcoin')} className="text-xs font-semibold text-red-600 hover:underline flex items-center gap-1"><Trash2 className="w-3.5 h-3.5" /> Remove</button>}
+                  <button type="button" onClick={() => handlePickChain('bitcoin')} className="text-xs font-semibold piri-link">{profile.bitcoinAddress ? 'Edit' : 'Add'}</button>
                 </div>
               </div>
-              {profile.bitcoinAddress ? <code className="text-piri text-sm break-all font-semibold">{profile.bitcoinAddress}</code> : <button onClick={() => handlePickChain('bitcoin')} className="flex items-center gap-1 text-sm font-semibold piri-link"><Plus className="w-4 h-4" /> Add BTC</button>}
+              {profile.bitcoinAddress ? <code className="text-piri text-sm break-all font-semibold">{profile.bitcoinAddress}</code> : <button type="button" onClick={() => handlePickChain('bitcoin')} className="flex items-center gap-1 text-sm font-semibold piri-link"><Plus className="w-4 h-4" /> Add BTC</button>}
             </div>
           </div>
           <div className="piri-card rounded-xl border-2 piri-card-solana shadow-sm">
@@ -478,11 +484,11 @@ export default function ProfileCreation({ onSave, onSignOut, initialProfile }: P
               <div className="flex items-center justify-between mb-2">
                 <span className="font-bold text-piri flex items-center gap-2"><ChainLogo chain="solana" size={20} /> Solana</span>
                 <div className="flex items-center gap-2">
-                  {profile.solanaAddress && <button onClick={() => removePayment('solana')} className="text-xs font-semibold text-red-600 hover:underline flex items-center gap-1"><Trash2 className="w-3.5 h-3.5" /> Remove</button>}
-                  <button onClick={() => handlePickChain('solana')} className="text-xs font-semibold piri-link">{profile.solanaAddress ? 'Edit' : 'Add'}</button>
+                  {profile.solanaAddress && <button type="button" onClick={() => removePayment('solana')} className="text-xs font-semibold text-red-600 hover:underline flex items-center gap-1"><Trash2 className="w-3.5 h-3.5" /> Remove</button>}
+                  <button type="button" onClick={() => handlePickChain('solana')} className="text-xs font-semibold piri-link">{profile.solanaAddress ? 'Edit' : 'Add'}</button>
                 </div>
               </div>
-              {profile.solanaAddress ? <code className="text-piri text-sm break-all font-semibold">{profile.solanaAddress}</code> : <button onClick={() => handlePickChain('solana')} className="flex items-center gap-1 text-sm font-semibold piri-link"><Plus className="w-4 h-4" /> Add SOL</button>}
+              {profile.solanaAddress ? <code className="text-piri text-sm break-all font-semibold">{profile.solanaAddress}</code> : <button type="button" onClick={() => handlePickChain('solana')} className="flex items-center gap-1 text-sm font-semibold piri-link"><Plus className="w-4 h-4" /> Add SOL</button>}
             </div>
           </div>
           <div className="piri-card rounded-xl border-2 piri-card-cashapp shadow-sm">
@@ -490,11 +496,11 @@ export default function ProfileCreation({ onSave, onSignOut, initialProfile }: P
               <div className="flex items-center justify-between mb-2">
                 <span className="font-bold text-piri flex items-center gap-2"><ChainLogo chain="cashapp" size={20} /> Cash App</span>
                 <div className="flex items-center gap-2">
-                  {profile.cashAppCashtag && <button onClick={() => removePayment('cashapp')} className="text-xs font-semibold text-red-600 hover:underline flex items-center gap-1"><Trash2 className="w-3.5 h-3.5" /> Remove</button>}
-                  <button onClick={() => handlePickChain('cashapp')} className="text-xs font-semibold piri-link">{profile.cashAppCashtag ? 'Edit' : 'Add'}</button>
+                  {profile.cashAppCashtag && <button type="button" onClick={() => removePayment('cashapp')} className="text-xs font-semibold text-red-600 hover:underline flex items-center gap-1"><Trash2 className="w-3.5 h-3.5" /> Remove</button>}
+                  <button type="button" onClick={() => handlePickChain('cashapp')} className="text-xs font-semibold piri-link">{profile.cashAppCashtag ? 'Edit' : 'Add'}</button>
                 </div>
               </div>
-              {profile.cashAppCashtag ? <code className="text-piri text-sm font-semibold">${profile.cashAppCashtag}</code> : <button onClick={() => handlePickChain('cashapp')} className="flex items-center gap-1 text-sm font-semibold piri-link"><Plus className="w-4 h-4" /> Add $cashtag</button>}
+              {profile.cashAppCashtag ? <code className="text-piri text-sm font-semibold">${profile.cashAppCashtag}</code> : <button type="button" onClick={() => handlePickChain('cashapp')} className="flex items-center gap-1 text-sm font-semibold piri-link"><Plus className="w-4 h-4" /> Add $cashtag</button>}
             </div>
           </div>
           <div className="piri-card rounded-xl border-2 piri-card-venmo shadow-sm">
@@ -502,11 +508,11 @@ export default function ProfileCreation({ onSave, onSignOut, initialProfile }: P
               <div className="flex items-center justify-between mb-2">
                 <span className="font-bold text-piri flex items-center gap-2"><ChainLogo chain="venmo" size={20} /> Venmo</span>
                 <div className="flex items-center gap-2">
-                  {profile.venmoUsername && <button onClick={() => removePayment('venmo')} className="text-xs font-semibold text-red-600 hover:underline flex items-center gap-1"><Trash2 className="w-3.5 h-3.5" /> Remove</button>}
-                  <button onClick={() => handlePickChain('venmo')} className="text-xs font-semibold piri-link">{profile.venmoUsername ? 'Edit' : 'Add'}</button>
+                  {profile.venmoUsername && <button type="button" onClick={() => removePayment('venmo')} className="text-xs font-semibold text-red-600 hover:underline flex items-center gap-1"><Trash2 className="w-3.5 h-3.5" /> Remove</button>}
+                  <button type="button" onClick={() => handlePickChain('venmo')} className="text-xs font-semibold piri-link">{profile.venmoUsername ? 'Edit' : 'Add'}</button>
                 </div>
               </div>
-              {profile.venmoUsername ? <code className="text-piri text-sm font-semibold">@{profile.venmoUsername}</code> : <button onClick={() => handlePickChain('venmo')} className="flex items-center gap-1 text-sm font-semibold piri-link"><Plus className="w-4 h-4" /> Add Venmo</button>}
+              {profile.venmoUsername ? <code className="text-piri text-sm font-semibold">@{profile.venmoUsername}</code> : <button type="button" onClick={() => handlePickChain('venmo')} className="flex items-center gap-1 text-sm font-semibold piri-link"><Plus className="w-4 h-4" /> Add Venmo</button>}
             </div>
           </div>
           <div className="piri-card rounded-xl border-2 piri-card-zelle shadow-sm">
@@ -514,11 +520,11 @@ export default function ProfileCreation({ onSave, onSignOut, initialProfile }: P
               <div className="flex items-center justify-between mb-2">
                 <span className="font-bold text-piri flex items-center gap-2"><ChainLogo chain="zelle" size={20} /> Zelle</span>
                 <div className="flex items-center gap-2">
-                  {profile.zelleContact && <button onClick={() => removePayment('zelle')} className="text-xs font-semibold text-red-600 hover:underline flex items-center gap-1"><Trash2 className="w-3.5 h-3.5" /> Remove</button>}
-                  <button onClick={() => handlePickChain('zelle')} className="text-xs font-semibold piri-link">{profile.zelleContact ? 'Edit' : 'Add'}</button>
+                  {profile.zelleContact && <button type="button" onClick={() => removePayment('zelle')} className="text-xs font-semibold text-red-600 hover:underline flex items-center gap-1"><Trash2 className="w-3.5 h-3.5" /> Remove</button>}
+                  <button type="button" onClick={() => handlePickChain('zelle')} className="text-xs font-semibold piri-link">{profile.zelleContact ? 'Edit' : 'Add'}</button>
                 </div>
               </div>
-              {profile.zelleContact ? <code className="text-piri text-sm font-semibold break-all">{profile.zelleContact}</code> : <button onClick={() => handlePickChain('zelle')} className="flex items-center gap-1 text-sm font-semibold piri-link"><Plus className="w-4 h-4" /> Add Zelle</button>}
+              {profile.zelleContact ? <code className="text-piri text-sm font-semibold break-all">{profile.zelleContact}</code> : <button type="button" onClick={() => handlePickChain('zelle')} className="flex items-center gap-1 text-sm font-semibold piri-link"><Plus className="w-4 h-4" /> Add Zelle</button>}
             </div>
           </div>
           <div className="piri-card rounded-xl border-2 piri-card-paypal shadow-sm">
@@ -526,17 +532,24 @@ export default function ProfileCreation({ onSave, onSignOut, initialProfile }: P
               <div className="flex items-center justify-between mb-2">
                 <span className="font-bold text-piri flex items-center gap-2"><ChainLogo chain="paypal" size={20} /> PayPal</span>
                 <div className="flex items-center gap-2">
-                  {profile.paypalUsername && <button onClick={() => removePayment('paypal')} className="text-xs font-semibold text-red-600 hover:underline flex items-center gap-1"><Trash2 className="w-3.5 h-3.5" /> Remove</button>}
-                  <button onClick={() => handlePickChain('paypal')} className="text-xs font-semibold piri-link">{profile.paypalUsername ? 'Edit' : 'Add'}</button>
+                  {profile.paypalUsername && <button type="button" onClick={() => removePayment('paypal')} className="text-xs font-semibold text-red-600 hover:underline flex items-center gap-1"><Trash2 className="w-3.5 h-3.5" /> Remove</button>}
+                  <button type="button" onClick={() => handlePickChain('paypal')} className="text-xs font-semibold piri-link">{profile.paypalUsername ? 'Edit' : 'Add'}</button>
                 </div>
               </div>
-              {profile.paypalUsername ? <code className="text-piri text-sm font-semibold">paypal.me/{profile.paypalUsername}</code> : <button onClick={() => handlePickChain('paypal')} className="flex items-center gap-1 text-sm font-semibold piri-link"><Plus className="w-4 h-4" /> Add PayPal</button>}
+              {profile.paypalUsername ? <code className="text-piri text-sm font-semibold">paypal.me/{profile.paypalUsername}</code> : <button type="button" onClick={() => handlePickChain('paypal')} className="flex items-center gap-1 text-sm font-semibold piri-link"><Plus className="w-4 h-4" /> Add PayPal</button>}
             </div>
           </div>
         </div>
-        <button onClick={handleFinalSave} disabled={!hasAnyAddress || isSaving} className="w-full py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 piri-btn-primary disabled:opacity-40">
+        {saveError && (
+          <div className="mb-4 rounded-xl p-4 border-2 border-red-400 bg-red-50">
+            <p className="text-sm font-semibold text-red-700">{saveError}</p>
+            <p className="text-xs text-red-600 mt-1">Check that Supabase is configured and the dev server is running with npm run dev:full</p>
+          </div>
+        )}
+        <button type="submit" disabled={!hasAnyAddress || isSaving} className="w-full py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 piri-btn-primary disabled:opacity-40">
           {isSaving ? <><Loader2 className="w-5 h-5 animate-spin" /> Saving...</> : <><Save className="w-5 h-5" /> Save & Generate QR Code</>}
         </button>
+        </form>
         {!hasAnyAddress && <p className="text-center text-sm piri-muted font-semibold mt-4">add at least one to continue</p>}
         <div className="mt-12 text-center">
           <p className="text-xs font-semibold piri-muted">

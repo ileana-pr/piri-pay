@@ -96,9 +96,9 @@ export default function ConnectChoice({ variant = 'compact', isConnecting }: Con
     </div>
   );
 
-  // mascot: piri.png; fallback: logo-heart-trans-1000px.png (both in public/logo/)
+  // mascot: piri.png; fallback: piri-heart.png (both in public/logo/)
   const LOGO_SRC = '/logo/piri.png';
-  const LOGO_FALLBACK = '/logo/logo-heart-trans-1000px.png';
+  const LOGO_FALLBACK = '/logo/piri-heart.png';
 
   return (
     <div className="piri-page">

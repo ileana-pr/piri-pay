@@ -11,7 +11,6 @@ const JPEG_QUALITY_DEFAULT = 0.92;
 export type ShareImageTheme = 'light' | 'dark';
 // layout tuned at 1080; other sizes scale proportionally
 const BASE = 1080;
-const MASCOT_URL = '/logo/logo-heart-trans-1000px.png';
 const FONT_DISPLAY = 'Fredoka One';
 const FONT_BODY = 'Nunito';
 
@@ -61,19 +60,29 @@ function scale(size: number, n: number) {
   return Math.max(1, Math.round((n * size) / BASE));
 }
 
+// logo paths for mascot (above QR) and branded QR center
+const LOGO_URLS = ['/logo/piri.png', '/logo/piri-heart.png'];
+
 async function buildShareCanvas(tipUrl: string, size: number, theme: ShareImageTheme): Promise<HTMLCanvasElement> {
-  // qr always black-on-white for scanability
+  // qr with high error correction so logo in center stays scannable (linktree-style)
   const qrDataUrl = await QRCode.toDataURL(tipUrl, {
     width: Math.floor(size * 0.62),
     margin: 2,
+    errorCorrectionLevel: 'H',
     color: { dark: '#2D0A00', light: '#ffffff' },
   });
   const qrImg = await loadImage(qrDataUrl);
   let mascotImg: HTMLImageElement | null = null;
-  try {
-    mascotImg = await loadImage(MASCOT_URL);
-  } catch {
-    // mascot optional; layout still works without it
+  let logoImg: HTMLImageElement | null = null;
+  for (const url of LOGO_URLS) {
+    try {
+      const img = await loadImage(url);
+      mascotImg = img;
+      logoImg = img;
+      break;
+    } catch {
+      /* try next */
+    }
   }
 
   const isDark = theme === 'dark';
@@ -141,6 +150,22 @@ async function buildShareCanvas(tipUrl: string, size: number, theme: ShareImageT
   ctx.lineWidth = strokeNarrow;
   ctx.stroke();
   ctx.drawImage(qrImg, qrX, qrY, qrDrawSize, qrDrawSize);
+
+  // branded QR: logo in center (linktree-style), ~18% of QR size, white bg for scanability
+  if (logoImg) {
+    const logoSize = Math.floor(qrDrawSize * 0.18);
+    const logoX = qrX + (qrDrawSize - logoSize) / 2;
+    const logoY = qrY + (qrDrawSize - logoSize) / 2;
+    const logoPad = Math.max(2, Math.floor(logoSize * 0.08));
+    const logoBgSize = logoSize + logoPad * 2;
+    const logoBgX = qrX + (qrDrawSize - logoBgSize) / 2;
+    const logoBgY = qrY + (qrDrawSize - logoBgSize) / 2;
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.roundRect(logoBgX, logoBgY, logoBgSize, logoBgSize, logoPad);
+    ctx.fill();
+    ctx.drawImage(logoImg, logoX, logoY, logoSize, logoSize);
+  }
 
   const qrBoxBottom = qrY + qrDrawSize + pad;
   const footerY = qrBoxBottom + scale(size, 40);
