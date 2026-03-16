@@ -217,6 +217,7 @@ function AppContent() {
         <ProfileCreation
           onSave={handleSaveProfile}
           onSignOut={handleSignOut}
+          connectedWalletAddress={address ?? undefined}
           initialProfile={
             pendingPreFillAddress
               ? {

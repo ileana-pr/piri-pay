@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { createPublicClient, http } from 'viem';
 import { mainnet } from 'viem/chains';
 import { normalize } from 'viem/ens';
-import { ArrowLeft, Plus, Save, Loader2, Trash2, LogOut } from 'lucide-react';
+import { ArrowLeft, Plus, Save, Loader2, Trash2, LogOut, Wallet } from 'lucide-react';
 import ChainLogo from './ChainLogo';
 
 // public client for ENS resolution (reads only, no wallet needed)
@@ -34,12 +34,14 @@ export interface UserProfile {
 interface ProfileCreationProps {
   onSave: (profile: UserProfile) => void | Promise<void>;
   onSignOut?: () => void;
+  /** when user has wallet connected, show quick-add for ETH/Base */
+  connectedWalletAddress?: string;
   initialProfile?: UserProfile | null;
 }
 
 type Step = 'chains' | 'manual' | 'review';
 
-export default function ProfileCreation({ onSave, onSignOut, initialProfile }: ProfileCreationProps) {
+export default function ProfileCreation({ onSave, onSignOut, connectedWalletAddress, initialProfile }: ProfileCreationProps) {
   const [step, setStep] = useState<Step>('chains');
   const [profile, setProfile] = useState<UserProfile>({
     id: initialProfile?.id,
@@ -393,6 +395,20 @@ export default function ProfileCreation({ onSave, onSignOut, initialProfile }: P
             </p>
           </div>
           <div className="space-y-6">
+            {(editingChain === 'ethereum' || editingChain === 'base') && connectedWalletAddress && (
+              <button
+                type="button"
+                onClick={() => {
+                  setManualAddress(connectedWalletAddress);
+                  setResolvedAddress(null);
+                  setResolveError(null);
+                }}
+                className="w-full py-3 rounded-xl border-2 border-dashed border-piri flex items-center justify-center gap-2 font-semibold text-piri hover:bg-piri/5 transition-colors"
+              >
+                <Wallet className="w-5 h-5" />
+                Use connected wallet
+              </button>
+            )}
             <input type="text" value={manualAddress} onChange={(e) => { setManualAddress(e.target.value); setResolvedAddress(null); setResolveError(null); }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {

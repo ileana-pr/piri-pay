@@ -92,6 +92,12 @@ const snakeToCamel: Record<string, string> = {
   paypal_username: 'paypalUsername',
 };
 
+// wallet sign-in uses synthetic emails (0x...@wallet.piri) — never store in profiles.email
+const WALLET_EMAIL_DOMAIN = 'wallet.piri';
+function isWalletEmail(email: string | undefined): boolean {
+  return !!email?.toLowerCase().endsWith(`@${WALLET_EMAIL_DOMAIN}`);
+}
+
 function rowToProfile(row: Record<string, unknown>): Record<string, string | undefined> {
   const out: Record<string, string | undefined> = {};
   for (const [k, v] of Object.entries(row)) {
@@ -141,8 +147,9 @@ export async function GET(request: Request) {
       if (user) {
         const id = nanoid(10);
         const row: Record<string, unknown> = { id, user_id: user.id };
-        if (user.email?.trim()) row.email = user.email.trim();
-        // wallet users (SIWE): verified address is owner, not a payment method
+        // never put wallet synthetic email in profiles — only real emails (google/email sign-in)
+        if (user.email?.trim() && !isWalletEmail(user.email)) row.email = user.email.trim();
+        // wallet users (SIWE): verified address goes in owner_address, never in email
         if (user.user_metadata?.wallet_address) row.owner_address = String(user.user_metadata.wallet_address).trim();
         const { error: insertErr } = await supabase.from('profiles').insert(row);
         if (!insertErr) {
@@ -211,11 +218,14 @@ export async function POST(request: Request) {
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (!authError && user) {
       row.user_id = user.id;
-      if (user.email?.trim()) row.email = user.email.trim();
+      // never put wallet synthetic email in profiles — only real emails
+      if (user.email?.trim() && !isWalletEmail(user.email)) row.email = user.email.trim();
+      // wallet users: set owner_address from verified metadata (client may not send it)
+      if (user.user_metadata?.wallet_address) row.owner_address = String(user.user_metadata.wallet_address).trim();
     }
   }
-  // link to wallet owner when provided (wallet sign-in) — separate from payment methods
-  if (profile.ownerAddress?.trim()) row.owner_address = profile.ownerAddress.trim();
+  // link to wallet owner when provided by client (fallback)
+  if (profile.ownerAddress?.trim() && !row.owner_address) row.owner_address = profile.ownerAddress.trim();
 
   const { error } = await supabase.from('profiles').insert(row);
 
