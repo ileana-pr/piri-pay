@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, QrCode, Copy, Check, Pencil, Download, Loader2, LogOut } from 'lucide-react';
 import QRCode from 'qrcode';
 import { UserProfile } from './ProfileCreation';
-import { encodeProfileForUrl } from '../lib/profileUrl';
 import {
   prepareShareImageExport,
   downloadShareBlob,
@@ -30,16 +29,15 @@ export default function ProfileView({ profile, onBack, onEdit, onSignOut }: Prof
   const [shareTheme, setShareTheme] = useState<ShareImageTheme>('light');
   const previewUrlRef = useRef<string | null>(null);
 
-  // stable link when we have id — updates reflect without reshare; else legacy encoded URL
   const getProfileUrl = () =>
-    profile.id
-      ? `${window.location.origin}/tip/${profile.id}`
-      : `${window.location.origin}/tip/${encodeProfileForUrl(profile)}`;
+    profile.id ? `${window.location.origin}/tip/${profile.id}` : '';
 
   useEffect(() => {
-    const url = profile.id
-      ? `${window.location.origin}/tip/${profile.id}`
-      : `${window.location.origin}/tip/${encodeProfileForUrl(profile)}`;
+    if (!profile.id) {
+      setQrDataUrl('');
+      return;
+    }
+    const url = `${window.location.origin}/tip/${profile.id}`;
     const generateQR = async () => {
       try {
         const dataUrl = await QRCode.toDataURL(url, {
@@ -52,10 +50,12 @@ export default function ProfileView({ profile, onBack, onEdit, onSignOut }: Prof
         console.error('Error generating QR code:', error);
       }
     };
-    generateQR();
-  }, [profile]);
+    void generateQR();
+  }, [profile.id]);
 
   const loadShareExportForDimension = async (dimension: number, themeOverride?: ShareImageTheme) => {
+    const tipUrl = getProfileUrl();
+    if (!tipUrl) return;
     const theme = themeOverride ?? shareTheme;
     if (previewUrlRef.current) {
       URL.revokeObjectURL(previewUrlRef.current);
@@ -64,7 +64,7 @@ export default function ProfileView({ profile, onBack, onEdit, onSignOut }: Prof
     setShareError(null);
     setShareLoadingDimension(dimension);
     try {
-      const data = await prepareShareImageExport(getProfileUrl(), dimension, theme);
+      const data = await prepareShareImageExport(tipUrl, dimension, theme);
       setShareExport(data);
       previewUrlRef.current = URL.createObjectURL(data.png.blob);
     } catch (e) {
@@ -113,7 +113,12 @@ export default function ProfileView({ profile, onBack, onEdit, onSignOut }: Prof
 
         <div className="rounded-2xl p-8 mb-6 border-2 bg-piri-cream border-piri-cashapp">
           <div className="flex flex-col items-center">
-            {qrDataUrl && (
+            {!profile.id && (
+              <p className="text-sm font-semibold text-piri text-center mb-4 max-w-sm">
+                Your share link isn&apos;t ready yet. Open <strong>Edit</strong>, then <strong>Save all</strong> — after that, your QR and link will work here.
+              </p>
+            )}
+            {profile.id && qrDataUrl && (
               <div className="p-6 bg-white rounded-2xl shadow-lg mb-6 border-2 border-piri">
                 <img src={qrDataUrl} alt="Scan to pay with Piri" className="w-64 h-64" />
               </div>
@@ -127,8 +132,13 @@ export default function ProfileView({ profile, onBack, onEdit, onSignOut }: Prof
             )}
             <div className="flex flex-col items-center gap-3 w-full">
               <button
-                onClick={() => copyToClipboard(getProfileUrl(), 'url')}
-                className="flex items-center gap-2 px-5 py-2.5 text-sm piri-btn-primary"
+                type="button"
+                disabled={!profile.id}
+                onClick={() => {
+                  const u = getProfileUrl();
+                  if (u) copyToClipboard(u, 'url');
+                }}
+                className="flex items-center gap-2 px-5 py-2.5 text-sm piri-btn-primary disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {copied === 'url' ? <><Check className="w-4 h-4" /> Copied!</> : <><Copy className="w-4 h-4" /> Copy Link</>}
               </button>
@@ -137,11 +147,12 @@ export default function ProfileView({ profile, onBack, onEdit, onSignOut }: Prof
               {!sharePanelOpen && (
                 <button
                   type="button"
+                  disabled={!profile.id}
                   onClick={() => {
                     setSharePanelOpen(true);
                     setShareError(null);
                   }}
-                  className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-xl border-2 border-piri text-piri bg-white hover:opacity-90 transition-opacity"
+                  className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-xl border-2 border-piri text-piri bg-white hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <Download className="w-4 h-4" /> Download image
                 </button>

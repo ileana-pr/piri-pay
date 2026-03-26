@@ -1,13 +1,16 @@
 import { useState, useEffect } from 'react';
 import TipPage from './TipPage';
 import { UserProfile } from './ProfileCreation';
-import { isProfileId } from '../lib/profileUrl';
-import { decodeProfileFromUrl } from '../lib/profileUrl';
 import { fetchProfile } from '../lib/profileApi';
 import { logClientError, tipLinkInvalidUserMessage, tipPageLoadUserMessage } from '../lib/userFacingErrors';
 
 interface TipPageLoaderProps {
   segment: string;
+}
+
+// tip URLs are /tip/:id only (nanoid from api)
+function isTipProfileId(segment: string): boolean {
+  return segment.length >= 8 && segment.length <= 32 && /^[a-zA-Z0-9_-]+$/.test(segment) && !segment.startsWith('%');
 }
 
 export default function TipPageLoader({ segment }: TipPageLoaderProps) {
@@ -16,22 +19,18 @@ export default function TipPageLoader({ segment }: TipPageLoaderProps) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (isProfileId(segment)) {
-      fetchProfile(segment)
-        .then(setProfile)
-        .catch((e) => {
-          logClientError('TipPageLoader fetchProfile', e);
-          setError(e instanceof Error ? e.message : tipPageLoadUserMessage());
-        })
-        .finally(() => setLoading(false));
-    } else {
-      try {
-        setProfile(decodeProfileFromUrl(segment));
-      } catch {
-        setError(tipLinkInvalidUserMessage());
-      }
+    if (!isTipProfileId(segment)) {
+      setError(tipLinkInvalidUserMessage());
       setLoading(false);
+      return;
     }
+    fetchProfile(segment)
+      .then(setProfile)
+      .catch((e) => {
+        logClientError('TipPageLoader fetchProfile', e);
+        setError(e instanceof Error ? e.message : tipPageLoadUserMessage());
+      })
+      .finally(() => setLoading(false));
   }, [segment]);
 
   if (loading) {

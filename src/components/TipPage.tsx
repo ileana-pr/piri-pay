@@ -349,8 +349,31 @@ export default function TipPage({ profile }: { profile: UserProfile }) {
     <div className="piri-page">
       <div className="max-w-lg mx-auto px-4 py-12">
         <div className="text-center mb-10">
+          <div className="flex justify-center mb-4">
+            <div className="w-20 h-20 rounded-2xl flex items-center justify-center overflow-hidden border-2 border-piri-cashapp bg-piri-cream shadow-lg">
+              <img
+                src="/logo/piri.png"
+                alt="Piri"
+                className="w-full h-full object-cover object-top"
+                onError={(e) => {
+                  const img = e.target as HTMLImageElement;
+                  if (img.dataset.fallbackUsed === '1') {
+                    img.style.display = 'none';
+                    const next = img.nextElementSibling;
+                    if (next) (next as HTMLElement).classList.remove('hidden');
+                  } else {
+                    img.dataset.fallbackUsed = '1';
+                    img.src = '/logo/piri-heart.png';
+                  }
+                }}
+              />
+              <span className="hidden piri-heading text-4xl font-black text-piri-cashapp" aria-hidden>P</span>
+            </div>
+          </div>
           <h1 className="piri-heading text-4xl font-black mb-3">Piri</h1>
-          <p className="text-xl font-bold text-piri">pick your flavors · get paid</p>
+          <p className="text-xl font-bold text-piri">choose a payment method</p>
+          <p className="text-sm font-semibold piri-muted mt-3">
+          </p>
         </div>
 
         {chains.length === 0 && !cashtag && !venmoUsername && !zelleContact && !paypalUsername ? (
@@ -424,6 +447,18 @@ export default function TipPage({ profile }: { profile: UserProfile }) {
             )}
           </div>
         )}
+
+        <div className="mt-10">
+          <a
+            href="/"
+            className="w-full py-4 rounded-2xl border-2 border-piri-cashapp bg-piri-cashapp/10 hover:bg-piri-cashapp/15 font-bold text-piri flex items-center justify-center transition-colors"
+          >
+            Create your own Piri profile
+          </a>
+          <p className="text-center text-xs font-semibold piri-muted mt-2">
+            make your own QR + add your payment flavors in minutes
+          </p>
+        </div>
 
         <div className="mt-12 text-center">
           <p className="text-xs font-semibold piri-muted">

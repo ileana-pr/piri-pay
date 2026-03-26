@@ -20,6 +20,24 @@ export function profileHttpUserMessage(status: number): string {
   }
 }
 
+// POST /api/profile never returns 404 from our api; 404 here is almost always Vite-only dev (no /api routes)
+const PROFILE_SAVE_API_MISSING =
+  "Couldn't reach the Piri API. On localhost run npm run dev:full (Vercel CLI) instead of npm run dev — Vite alone doesn't serve /api routes.";
+
+/** create profile (POST) — map HTTP status to UI copy */
+export function profilePostUserMessage(status: number): string {
+  if (status === 404) return PROFILE_SAVE_API_MISSING;
+  return profileHttpUserMessage(status);
+}
+
+/** update profile (PUT) — 404 on localhost is usually missing /api; in production means row missing */
+export function profilePutUserMessage(status: number): string {
+  if (status === 404) {
+    return import.meta.env.DEV ? PROFILE_SAVE_API_MISSING : profileHttpUserMessage(404);
+  }
+  return profileHttpUserMessage(status);
+}
+
 /** magic link or oauth */
 export function authEmailUserMessage(): string {
   return "We couldn't send that email. Check the address and try again.";

@@ -309,7 +309,7 @@ export default function ProfileCreation({ onSave, onSignOut, connectedWalletAddr
               const displayValue = chain === 'ethereum' ? profile.ethereumAddress : chain === 'base' ? profile.baseAddress : chain === 'bitcoin' ? profile.bitcoinAddress : chain === 'solana' ? profile.solanaAddress : chain === 'cashapp' ? (profile.cashAppCashtag ? `$${profile.cashAppCashtag}` : '') : chain === 'venmo' ? (profile.venmoUsername ? `@${profile.venmoUsername}` : '') : chain === 'zelle' ? (profile.zelleContact ?? '') : (profile.paypalUsername ? `paypal.me/${profile.paypalUsername}` : '');
               return (
                 <div key={chain} className={`piri-card flex-col items-stretch rounded-xl border-2 p-4 shadow-sm ${flavorCard(chain)}`}>
-                  <div className="mb-1 flex flex-col gap-2 md:flex-row md:items-center md:justify-between md:gap-0">
+                  <div className="mb-1 flex flex-col gap-2 md:flex-row md:items-start md:justify-between md:gap-0">
                     <span className="min-w-0 font-bold text-piri flex items-center gap-2 md:flex-1">
                       <ChainLogo chain={chain} size={20} />
                       {label}

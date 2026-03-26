@@ -1,6 +1,6 @@
 import type { UserProfile } from '../components/ProfileCreation';
 import { supabase } from './supabase';
-import { logClientError, profileHttpUserMessage } from './userFacingErrors';
+import { logClientError, profileHttpUserMessage, profilePostUserMessage, profilePutUserMessage } from './userFacingErrors';
 
 const API = '/api/profile';
 
@@ -18,7 +18,7 @@ export async function createProfile(profile: Omit<UserProfile, 'id'> & { ownerAd
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: res.statusText }));
     logClientError('createProfile', res.status, err);
-    throw new Error(profileHttpUserMessage(res.status));
+    throw new Error(profilePostUserMessage(res.status));
   }
   return res.json();
 }
@@ -33,7 +33,7 @@ export async function updateProfile(id: string, profile: Omit<UserProfile, 'id'>
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: res.statusText }));
     logClientError('updateProfile', res.status, err);
-    throw new Error(profileHttpUserMessage(res.status));
+    throw new Error(profilePutUserMessage(res.status));
   }
 }
 
