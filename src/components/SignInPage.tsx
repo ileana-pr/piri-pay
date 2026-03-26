@@ -98,20 +98,20 @@ export default function SignInPage() {
             <p className="text-sm piri-muted mb-4">
               Enter your email and we'll send you a magic link. Click the link in your inbox — no password needed. Check spam if you don't see it.
             </p>
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row">
               <input
                 type="email"
                 placeholder="you@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={emailSent || !supabase}
-                className="flex-1 px-4 py-3 rounded-xl border-2 border-piri/30 bg-white font-medium placeholder:piri-muted focus:outline-none focus:border-piri disabled:opacity-60"
+                className="min-w-0 flex-1 px-4 py-3 rounded-xl border-2 border-piri/30 bg-white font-medium placeholder:piri-muted focus:outline-none focus:border-piri disabled:opacity-60"
               />
               <button
                 type="button"
                 onClick={handleEmailSignIn}
                 disabled={emailLoading || emailSent || !supabase}
-                className="px-5 py-3 rounded-xl border-2 border-piri bg-piri/10 hover:bg-piri/20 font-bold text-piri shrink-0 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                className="w-full px-5 py-3 rounded-xl border-2 border-piri bg-piri/10 hover:bg-piri/20 font-bold text-piri shrink-0 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 sm:w-auto"
               >
                 {emailLoading ? 'Sending...' : emailSent ? 'Sent' : 'Send link'}
               </button>
