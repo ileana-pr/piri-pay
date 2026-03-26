@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useConnectModal } from '@rainbow-me/rainbowkit';
 import { Smartphone } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { authEmailUserMessage, logClientError } from '../lib/userFacingErrors';
 
 interface ConnectChoiceProps {
   variant?: 'compact' | 'full';
@@ -21,7 +22,7 @@ export default function ConnectChoice({ variant = 'compact', isConnecting }: Con
   const handleEmailSignIn = async () => {
     const trimmed = email.trim();
     if (!trimmed || !supabase) {
-      setEmailError(supabase ? 'Enter your email' : 'Auth not configured');
+      setEmailError(supabase ? 'Enter your email' : "Email sign-in isn't available right now.");
       return;
     }
     setEmailError(null);
@@ -34,7 +35,8 @@ export default function ConnectChoice({ variant = 'compact', isConnecting }: Con
       if (error) throw error;
       setEmailSent(true);
     } catch (e) {
-      setEmailError(e instanceof Error ? e.message : 'Failed to send link');
+      logClientError('ConnectChoice signInWithOtp', e);
+      setEmailError(authEmailUserMessage());
     } finally {
       setEmailLoading(false);
     }

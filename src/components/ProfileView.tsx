@@ -11,6 +11,7 @@ import {
   type ShareImageExport,
   type ShareImageTheme,
 } from '../lib/shareImage';
+import { logClientError, shareImageUserMessage } from '../lib/userFacingErrors';
 
 interface ProfileViewProps {
   profile: UserProfile;
@@ -67,7 +68,8 @@ export default function ProfileView({ profile, onBack, onEdit, onSignOut }: Prof
       setShareExport(data);
       previewUrlRef.current = URL.createObjectURL(data.png.blob);
     } catch (e) {
-      setShareError(e instanceof Error ? e.message : 'could not prepare image');
+      logClientError('ProfileView share export', e);
+      setShareError(shareImageUserMessage());
     } finally {
       setShareLoadingDimension(null);
     }

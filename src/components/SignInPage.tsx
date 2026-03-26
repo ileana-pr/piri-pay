@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useConnectModal } from '@rainbow-me/rainbowkit';
 import { Mail, Smartphone, ChevronRight } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { authEmailUserMessage, logClientError } from '../lib/userFacingErrors';
 
 /** get-started / sign-in page — email, wallet, google. explains each method for clarity. */
 export default function SignInPage() {
@@ -13,11 +14,12 @@ export default function SignInPage() {
   const [emailLoading, setEmailLoading] = useState(false);
   const [emailError, setEmailError] = useState<string | null>(null);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [googleError, setGoogleError] = useState<string | null>(null);
 
   const handleEmailSignIn = async () => {
     const trimmed = email.trim();
     if (!trimmed || !supabase) {
-      setEmailError(supabase ? 'Enter your email' : 'Auth not configured');
+      setEmailError(supabase ? 'Enter your email' : "Email sign-in isn't available on this device right now.");
       return;
     }
     setEmailError(null);
@@ -30,7 +32,8 @@ export default function SignInPage() {
       if (error) throw error;
       setEmailSent(true);
     } catch (e) {
-      setEmailError(e instanceof Error ? e.message : 'Failed to send link');
+      logClientError('signInWithOtp', e);
+      setEmailError(authEmailUserMessage());
     } finally {
       setEmailLoading(false);
     }
@@ -38,6 +41,7 @@ export default function SignInPage() {
 
   const handleGoogleSignIn = async () => {
     if (!supabase) return;
+    setGoogleError(null);
     setGoogleLoading(true);
     try {
       await supabase.auth.signInWithOAuth({
@@ -45,7 +49,8 @@ export default function SignInPage() {
         options: { redirectTo: typeof window !== 'undefined' ? window.location.origin : undefined },
       });
     } catch (e) {
-      console.error('Google sign-in error:', e);
+      logClientError('google OAuth', e);
+      setGoogleError("Couldn't open Google sign-in. Please try again or use another sign-in option.");
     } finally {
       setGoogleLoading(false);
     }
@@ -142,6 +147,9 @@ export default function SignInPage() {
               {googleLoading ? 'Redirecting to Google...' : 'Continue with Google'}
               <ChevronRight className="w-5 h-5" />
             </button>
+            {googleError && (
+              <p className="text-sm text-red-600 font-semibold mt-2">{googleError}</p>
+            )}
           </section>
 
           {/* wallet */}

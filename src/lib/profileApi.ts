@@ -1,5 +1,6 @@
 import type { UserProfile } from '../components/ProfileCreation';
 import { supabase } from './supabase';
+import { logClientError, profileHttpUserMessage } from './userFacingErrors';
 
 const API = '/api/profile';
 
@@ -16,10 +17,8 @@ export async function createProfile(profile: Omit<UserProfile, 'id'> & { ownerAd
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: res.statusText }));
-    let msg = err.error || 'Failed to save profile';
-    if (err.details) msg += ` — ${err.details}`;
-    if (err.hint) msg += ` ${err.hint}`;
-    throw new Error(msg);
+    logClientError('createProfile', res.status, err);
+    throw new Error(profileHttpUserMessage(res.status));
   }
   return res.json();
 }
@@ -33,10 +32,8 @@ export async function updateProfile(id: string, profile: Omit<UserProfile, 'id'>
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: res.statusText }));
-    let msg = err.error || 'Failed to update profile';
-    if (err.details) msg += ` — ${err.details}`;
-    if (err.hint) msg += ` ${err.hint}`;
-    throw new Error(msg);
+    logClientError('updateProfile', res.status, err);
+    throw new Error(profileHttpUserMessage(res.status));
   }
 }
 
@@ -50,7 +47,8 @@ export async function fetchProfileBySession(): Promise<UserProfile | null> {
   if (res.status === 404) return null;
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: res.statusText }));
-    throw new Error(err.error || 'Failed to fetch profile');
+    logClientError('fetchProfileBySession', res.status, err);
+    throw new Error(profileHttpUserMessage(res.status));
   }
   const data = await res.json();
   return {
@@ -72,7 +70,8 @@ export async function fetchProfileByAddress(address: string): Promise<UserProfil
   if (res.status === 404) return null;
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: res.statusText }));
-    throw new Error(err.error || 'Failed to fetch profile');
+    logClientError('fetchProfileByAddress', res.status, err);
+    throw new Error(profileHttpUserMessage(res.status));
   }
   const data = await res.json();
   return {
@@ -92,9 +91,10 @@ export async function fetchProfileByAddress(address: string): Promise<UserProfil
 export async function fetchProfile(id: string): Promise<UserProfile> {
   const res = await fetch(`${API}/${id}`);
   if (!res.ok) {
-    if (res.status === 404) throw new Error('Profile not found');
+    if (res.status === 404) throw new Error("This tip page couldn't be found.");
     const err = await res.json().catch(() => ({ error: res.statusText }));
-    throw new Error(err.error || 'Failed to fetch profile');
+    logClientError('fetchProfile', res.status, err);
+    throw new Error(profileHttpUserMessage(res.status));
   }
   const data = await res.json();
   return {

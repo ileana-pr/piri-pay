@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { logClientError, profileHttpUserMessage } from '../lib/userFacingErrors';
 import { createPublicClient, http } from 'viem';
 import { mainnet } from 'viem/chains';
 import { normalize } from 'viem/ens';
@@ -91,25 +92,33 @@ export default function ProfileCreation({ onSave, onSignOut, connectedWalletAddr
       // .base and .base.eth: ENS subdomains on mainnet
       if (domain.endsWith('.base.eth') || domain.endsWith('.base') || domain.includes('.base')) {
         const name = domain.replace(/\.base\.eth$/i, '').replace(/\.base$/i, '').trim();
-        if (!name) throw new Error('invalid .base name');
+        if (!name) throw new Error('BASE_NAME_INVALID');
         // .base and .base.eth are ENS subdomains on mainnet
         const ensName = domain.endsWith('.base.eth') ? domain : `${domain}.eth`;
         const address = await ensClient.getEnsAddress({ name: normalize(ensName) });
-        if (!address) throw new Error('no address found for this .base name');
+        if (!address) throw new Error('BASE_RESOLVE_FAIL');
         setResolvedAddress(address);
       } else if (domain.endsWith('.eth')) {
         const address = await ensClient.getEnsAddress({ name: normalize(domain) });
-        if (!address) throw new Error('no address found for this ENS name');
+        if (!address) throw new Error('ENS_RESOLVE_FAIL');
         setResolvedAddress(address);
       } else if (domain.endsWith('.sol')) {
         const res = await fetch(`https://sns-sdk-proxy.bonfida.workers.dev/resolve/${domain.replace('.sol', '')}`);
-        if (!res.ok) throw new Error('could not resolve .sol domain');
+        if (!res.ok) throw new Error('SOL_RESOLVE_FAIL');
         const data = await res.json();
-        if (!data.result) throw new Error('no address found for this .sol domain');
+        if (!data.result) throw new Error('SOL_NAME_FAIL');
         setResolvedAddress(data.result);
       }
     } catch (err) {
-      setResolveError(err instanceof Error ? err.message : 'failed to resolve domain');
+      const key = err instanceof Error ? err.message : '';
+      const friendly =
+        key === 'BASE_NAME_INVALID' ? 'That doesn’t look like a valid name. Try again.'
+          : key === 'BASE_RESOLVE_FAIL' ? 'We couldn’t find a wallet for that .base name.'
+            : key === 'ENS_RESOLVE_FAIL' ? 'We couldn’t find a wallet for that ENS name.'
+              : key === 'SOL_RESOLVE_FAIL' || key === 'SOL_NAME_FAIL' ? 'We couldn’t find a wallet for that .sol name.'
+                : 'We couldn’t look up that name. Try again.';
+      logClientError('resolveDomain', err);
+      setResolveError(friendly);
     } finally {
       setIsResolving(false);
     }
@@ -201,8 +210,8 @@ export default function ProfileCreation({ onSave, onSignOut, connectedWalletAddr
     try {
       await onSave(profile);
     } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      setSaveError(msg);
+      logClientError('ProfileCreation save', e);
+      setSaveError(e instanceof Error ? e.message : profileHttpUserMessage(500));
     } finally {
       setIsSaving(false);
     }

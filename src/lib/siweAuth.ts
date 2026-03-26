@@ -1,5 +1,6 @@
 import { createSiweMessage } from 'viem/siwe';
 import { supabase } from './supabase';
+import { logClientError, walletSignInUserMessage } from './userFacingErrors';
 
 /** run SIWE flow: get challenge, sign, verify, get session. returns true on success. */
 export async function signInWithSiwe(
@@ -20,14 +21,14 @@ export async function signInWithSiwe(
   );
   if (!challengeRes.ok) {
     const text = await challengeRes.text();
-    let err: { details?: string; error?: string; hint?: string } = {};
+    let err: unknown = text;
     try {
       err = JSON.parse(text);
     } catch {
-      console.error('SIWE challenge error (non-JSON):', text.slice(0, 200));
+      /* not json */
     }
-    const msg = err.details || err.error || (text.slice(0, 100) || 'Failed to get challenge');
-    throw new Error(msg);
+    logClientError('SIWE challenge', challengeRes.status, err);
+    throw new Error(walletSignInUserMessage());
   }
   const { nonce } = await challengeRes.json();
 
@@ -50,14 +51,14 @@ export async function signInWithSiwe(
   });
   if (!verifyRes.ok) {
     const text = await verifyRes.text();
-    let err: { details?: string; error?: string; hint?: string } = {};
+    let err: unknown = text;
     try {
       err = JSON.parse(text);
     } catch {
-      console.error('SIWE verify error (non-JSON):', text.slice(0, 200));
+      /* not json */
     }
-    const msg = err.details || err.error || (text.slice(0, 100) || 'Verification failed');
-    throw new Error(msg);
+    logClientError('SIWE verify', verifyRes.status, err);
+    throw new Error(walletSignInUserMessage());
   }
   const { token_hash } = await verifyRes.json();
 
@@ -65,6 +66,9 @@ export async function signInWithSiwe(
     token_hash,
     type: 'magiclink',
   });
-  if (error) throw new Error(error.message);
+  if (error) {
+    logClientError('SIWE verifyOtp', error);
+    throw new Error(walletSignInUserMessage());
+  }
   return true;
 }
