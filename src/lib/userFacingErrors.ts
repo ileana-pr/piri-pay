@@ -41,7 +41,7 @@ export function shareImageUserMessage(): string {
   return "Couldn't prepare the image. Please try again.";
 }
 
-/** solana RPC / blockhash / fetch failures */
+/** solana RPC / blockhash / fetch failures (incl. 403 from crowded public rpc) */
 export function solanaNetworkUserMessage(): string {
-  return "Couldn't reach the Solana network from this device. Try again in a moment or switch networks (e.g. Wi‑Fi or mobile data).";
+  return "Couldn't load Solana network data. Try again in a moment.";
 }

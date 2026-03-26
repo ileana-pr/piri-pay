@@ -40,7 +40,7 @@ export default function SolanaTip({ onBack, receivingAddress }: SolanaTipProps) 
   const { connection } = useConnection();
 
   // must match solanaConfig default
-  const defaultEndpoint = 'https://api.mainnet-beta.solana.com';
+  const defaultEndpoint = 'https://rpc.ankr.com/solana';
   const solanaNetwork = useMemo(() => {
     const endpoint = import.meta.env.VITE_SOLANA_ENDPOINT || defaultEndpoint;
     if (endpoint.includes('devnet')) return 'Devnet (Testnet)';
@@ -139,7 +139,8 @@ export default function SolanaTip({ onBack, receivingAddress }: SolanaTipProps) 
       } else {
         const isRpc =
           m.includes('blockhash') || m.includes('failed to fetch') || m.includes('fetch') ||
-          m.includes('network') || m.includes('ssl') || m.includes('rpc');
+          m.includes('network') || m.includes('ssl') || m.includes('rpc') ||
+          m.includes('403') || m.includes('forbidden');
         setError(isRpc ? solanaNetworkUserMessage() : 'Something went wrong sending this tip. Please try again.');
       }
       setIsSolSending(false);
@@ -189,6 +190,16 @@ export default function SolanaTip({ onBack, receivingAddress }: SolanaTipProps) 
       }, 100);
     }
   };
+
+  const handleDisconnectSol = useCallback(async () => {
+    try {
+      await disconnectSol();
+    } catch (err) {
+      logClientError('SolanaTip disconnect', err);
+    } finally {
+      select(null);
+    }
+  }, [disconnectSol, select]);
 
   const quickAmounts = ['0.1', '0.5', '1', '5', '10'];
   const tokens = POPULAR_TOKENS.solana;
@@ -422,8 +433,9 @@ export default function SolanaTip({ onBack, receivingAddress }: SolanaTipProps) 
                     <p className="text-sm font-medium">Solana {solanaNetwork}</p>
                   </div>
                   <button
-                    onClick={() => disconnectSol()}
-                    className="text-sm text-red-400 hover:text-red-300 mt-2"
+                    type="button"
+                    onClick={() => void handleDisconnectSol()}
+                    className="text-sm text-red-400 hover:text-red-300 mt-2 cursor-pointer"
                   >
                     Disconnect
                   </button>
@@ -510,13 +522,14 @@ export default function SolanaTip({ onBack, receivingAddress }: SolanaTipProps) 
                 </div>
               )}
               <button
+                type="button"
                 onClick={() => {
                   setAmount('');
                   setSelectedToken(null);
                   setError(null);
                   setSolHash(null);
                   setIsSolSuccess(false);
-                  disconnectSol();
+                  void handleDisconnectSol();
                 }}
                 className="mt-6 px-6 py-3 bg-slate-700 hover:bg-slate-600 rounded-xl transition-colors"
               >
