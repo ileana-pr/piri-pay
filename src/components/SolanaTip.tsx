@@ -40,7 +40,7 @@ export default function SolanaTip({ onBack, receivingAddress }: SolanaTipProps) 
   const { connection } = useConnection();
 
   // must match solanaConfig default
-  const defaultEndpoint = 'https://rpc.ankr.com/solana';
+  const defaultEndpoint = 'https://solana.leorpc.com/?api_key=FREE';
   const solanaNetwork = useMemo(() => {
     const endpoint = import.meta.env.VITE_SOLANA_ENDPOINT || defaultEndpoint;
     if (endpoint.includes('devnet')) return 'Devnet (Testnet)';
