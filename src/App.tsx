@@ -217,6 +217,7 @@ function AppContent() {
       )}
       {currentPage === 'create' && (
         <ProfileCreation
+          key={userProfile?.id ?? 'create'}
           onSave={handleSaveProfile}
           onSignOut={handleSignOut}
           connectedWalletAddress={address ?? undefined}

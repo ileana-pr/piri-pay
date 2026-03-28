@@ -4,6 +4,30 @@ import { logClientError, profileHttpUserMessage, profilePostUserMessage, profile
 
 const API = '/api/profile';
 
+/** upload resized avatar; updates profiles.avatar_url server-side; requires signed-in owner */
+export async function uploadProfileAvatar(profileId: string, imageBlob: Blob): Promise<{ avatarUrl: string }> {
+  const { data: { session } } = (await supabase?.auth.getSession()) ?? { data: { session: null } };
+  if (!session?.access_token) throw new Error('Sign in to upload a profile photo.');
+
+  const name =
+    imageBlob.type === 'image/png' ? 'avatar.png' : imageBlob.type === 'image/jpeg' ? 'avatar.jpg' : 'avatar.webp';
+  const fd = new FormData();
+  fd.set('profileId', profileId);
+  fd.set('file', imageBlob, name);
+
+  const res = await fetch(`${API}/avatar`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${session.access_token}` },
+    body: fd,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: res.statusText }));
+    logClientError('uploadProfileAvatar', res.status, err);
+    throw new Error(typeof err.error === 'string' ? err.error : profileHttpUserMessage(res.status));
+  }
+  return res.json() as Promise<{ avatarUrl: string }>;
+}
+
 /** create profile, returns id. links to supabase user when session exists (google/email), or ownerAddress when wallet-only. */
 export async function createProfile(profile: Omit<UserProfile, 'id'> & { ownerAddress?: string }): Promise<{ id: string }> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -25,9 +49,13 @@ export async function createProfile(profile: Omit<UserProfile, 'id'> & { ownerAd
 
 /** update existing profile by id */
 export async function updateProfile(id: string, profile: Omit<UserProfile, 'id'>): Promise<void> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  const { data: { session } } = (await supabase?.auth.getSession()) ?? { data: { session: null } };
+  if (session?.access_token) headers.Authorization = `Bearer ${session.access_token}`;
+
   const res = await fetch(`${API}/${id}`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify(profile),
   });
   if (!res.ok) {
@@ -61,6 +89,8 @@ export async function fetchProfileBySession(): Promise<UserProfile | null> {
     venmoUsername: data.venmoUsername,
     zelleContact: data.zelleContact,
     paypalUsername: data.paypalUsername,
+    displayName: data.displayName,
+    avatarUrl: data.avatarUrl,
   };
 }
 
@@ -84,6 +114,8 @@ export async function fetchProfileByAddress(address: string): Promise<UserProfil
     venmoUsername: data.venmoUsername,
     zelleContact: data.zelleContact,
     paypalUsername: data.paypalUsername,
+    displayName: data.displayName,
+    avatarUrl: data.avatarUrl,
   };
 }
 
@@ -107,5 +139,7 @@ export async function fetchProfile(id: string): Promise<UserProfile> {
     venmoUsername: data.venmoUsername,
     zelleContact: data.zelleContact,
     paypalUsername: data.paypalUsername,
+    displayName: data.displayName,
+    avatarUrl: data.avatarUrl,
   };
 }

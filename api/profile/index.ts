@@ -18,6 +18,9 @@ const supabase =
       })
     : null;
 
+const DISPLAY_NAME_MAX = 80;
+const AVATAR_URL_MAX = 2048;
+
 interface StoredProfile {
   ethereumAddress?: string;
   baseAddress?: string;
@@ -27,6 +30,22 @@ interface StoredProfile {
   venmoUsername?: string;
   zelleContact?: string;
   paypalUsername?: string;
+  /** shown on public tip page */
+  displayName?: string;
+  /** https image url for tip page avatar */
+  avatarUrl?: string;
+}
+
+function isValidOptionalHttpsUrl(url: string): boolean {
+  const t = url.trim();
+  if (!t) return true;
+  if (t.length > AVATAR_URL_MAX) return false;
+  try {
+    const u = new URL(t);
+    return u.protocol === 'https:';
+  } catch {
+    return false;
+  }
 }
 
 function validateProfile(body: unknown): body is StoredProfile {
@@ -41,6 +60,8 @@ function validateProfile(body: unknown): body is StoredProfile {
     'venmoUsername',
     'zelleContact',
     'paypalUsername',
+    'displayName',
+    'avatarUrl',
     'ownerAddress', // wallet sign-in identity, not a payment method
   ];
   for (const key of Object.keys(p)) {
@@ -48,6 +69,8 @@ function validateProfile(body: unknown): body is StoredProfile {
     if (key !== 'ownerAddress' && typeof p[key] !== 'string') return false;
     if (key === 'ownerAddress' && p[key] != null && typeof p[key] !== 'string') return false;
   }
+  if (typeof p.displayName === 'string' && p.displayName.length > DISPLAY_NAME_MAX) return false;
+  if (typeof p.avatarUrl === 'string' && !isValidOptionalHttpsUrl(p.avatarUrl)) return false;
   const vals = [
     p.ethereumAddress,
     p.baseAddress,
@@ -70,13 +93,18 @@ const camelToSnake: Record<string, string> = {
   venmoUsername: 'venmo_username',
   zelleContact: 'zelle_contact',
   paypalUsername: 'paypal_username',
+  displayName: 'display_name',
+  avatarUrl: 'avatar_url',
 };
 
 function toRow(profile: StoredProfile): Record<string, string | null> {
   const row: Record<string, string | null> = {};
   for (const [k, v] of Object.entries(profile)) {
     const col = camelToSnake[k];
-    if (col) row[col] = (typeof v === 'string' && v.trim()) ? v.trim() : null;
+    if (!col) continue;
+    if (typeof v !== 'string') continue;
+    const t = v.trim();
+    row[col] = t.length > 0 ? t : null;
   }
   return row;
 }
@@ -90,6 +118,8 @@ const snakeToCamel: Record<string, string> = {
   venmo_username: 'venmoUsername',
   zelle_contact: 'zelleContact',
   paypal_username: 'paypalUsername',
+  display_name: 'displayName',
+  avatar_url: 'avatarUrl',
 };
 
 // wallet sign-in uses synthetic emails (0x...@wallet.piri) — never store in profiles.email

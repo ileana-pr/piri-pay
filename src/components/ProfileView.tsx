@@ -108,6 +108,9 @@ export default function ProfileView({ profile, onBack, onEdit, onSignOut }: Prof
 
         <div className="text-center mb-8">
           <h1 className="piri-heading text-4xl font-black mb-2">Your Piri</h1>
+          {profile.displayName?.trim() ? (
+            <p className="text-base font-bold text-piri mb-1">{profile.displayName.trim()}</p>
+          ) : null}
           <p className="text-sm font-semibold piri-muted">one link for every flavor — share the QR to get paid</p>
         </div>
 

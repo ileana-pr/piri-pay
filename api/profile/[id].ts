@@ -12,20 +12,39 @@ const supabase =
     ? createClient(supabaseUrl, supabaseKey, { auth: { persistSession: false } })
     : null;
 
-// inlined validation (avoids ../lib/profileSchema import resolution issues)
-const ALLOWED_KEYS = [
+const DISPLAY_NAME_MAX = 80;
+const AVATAR_URL_MAX = 2048;
+
+const PAYMENT_KEYS = [
   'ethereumAddress', 'baseAddress', 'bitcoinAddress', 'solanaAddress',
   'cashAppCashtag', 'venmoUsername', 'zelleContact', 'paypalUsername',
 ];
+const ALLOWED_KEYS = [...PAYMENT_KEYS, 'displayName', 'avatarUrl'];
+
 function hasAtLeastOneMethod(p: Record<string, unknown>): boolean {
-  return ALLOWED_KEYS.some((k) => typeof p[k] === 'string' && (p[k] as string).trim().length > 0);
+  return PAYMENT_KEYS.some((k) => typeof p[k] === 'string' && (p[k] as string).trim().length > 0);
 }
+
+function isValidOptionalHttpsUrl(url: string): boolean {
+  const t = url.trim();
+  if (!t) return true;
+  if (t.length > AVATAR_URL_MAX) return false;
+  try {
+    const u = new URL(t);
+    return u.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
 function validateProfile(body: unknown): body is Record<string, unknown> {
   if (!body || typeof body !== 'object') return false;
   const p = body as Record<string, unknown>;
   for (const key of Object.keys(p)) {
     if (!ALLOWED_KEYS.includes(key) || typeof p[key] !== 'string') return false;
   }
+  if (typeof p.displayName === 'string' && p.displayName.length > DISPLAY_NAME_MAX) return false;
+  if (typeof p.avatarUrl === 'string' && !isValidOptionalHttpsUrl(p.avatarUrl)) return false;
   return hasAtLeastOneMethod(p);
 }
 
@@ -38,6 +57,8 @@ const snakeToCamel: Record<string, string> = {
   venmo_username: 'venmoUsername',
   zelle_contact: 'zelleContact',
   paypal_username: 'paypalUsername',
+  display_name: 'displayName',
+  avatar_url: 'avatarUrl',
 };
 
 function toProfile(row: Record<string, unknown>): Record<string, string | undefined> {
@@ -94,6 +115,8 @@ const camelToSnake: Record<string, string> = {
   venmoUsername: 'venmo_username',
   zelleContact: 'zelle_contact',
   paypalUsername: 'paypal_username',
+  displayName: 'display_name',
+  avatarUrl: 'avatar_url',
 };
 
 function toRow(profile: Record<string, unknown>): Record<string, string | null> {
@@ -101,7 +124,10 @@ function toRow(profile: Record<string, unknown>): Record<string, string | null> 
   for (const [k, v] of Object.entries(profile)) {
     if (k === 'id') continue;
     const col = camelToSnake[k];
-    if (col) row[col] = typeof v === 'string' && v.trim() ? v.trim() : null;
+    if (!col) continue;
+    if (typeof v !== 'string') continue;
+    const t = v.trim();
+    row[col] = t.length > 0 ? t : null;
   }
   return row;
 }

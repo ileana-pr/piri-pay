@@ -1,9 +1,11 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { logClientError, profileHttpUserMessage } from '../lib/userFacingErrors';
+import { createProfile, uploadProfileAvatar } from '../lib/profileApi';
+import { resizeProfileAvatarFile } from '../lib/resizeProfileAvatar';
 import { createPublicClient, http } from 'viem';
 import { mainnet } from 'viem/chains';
 import { normalize } from 'viem/ens';
-import { ArrowLeft, Save, Loader2, Trash2, LogOut, Wallet } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, Trash2, LogOut, Wallet, ImagePlus } from 'lucide-react';
 import ChainLogo from './ChainLogo';
 
 // public client for ENS resolution (reads only, no wallet needed)
@@ -30,6 +32,10 @@ export interface UserProfile {
   zelleContact?: string;
   /** paypal.me username (e.g. johndoe) — opens paypal.me/username?amount=X when tipper pays */
   paypalUsername?: string;
+  /** shown on public tip page */
+  displayName?: string;
+  /** https image url for tip page avatar */
+  avatarUrl?: string;
 }
 
 interface ProfileCreationProps {
@@ -60,6 +66,8 @@ export default function ProfileCreation({ onSave, onSignOut, connectedWalletAddr
     venmoUsername: initialProfile?.venmoUsername ?? '',
     zelleContact: initialProfile?.zelleContact ?? '',
     paypalUsername: initialProfile?.paypalUsername ?? '',
+    displayName: initialProfile?.displayName ?? '',
+    avatarUrl: initialProfile?.avatarUrl ?? '',
   });
   const [editingChain, setEditingChain] = useState<'ethereum' | 'base' | 'bitcoin' | 'solana' | 'cashapp' | 'venmo' | 'zelle' | 'paypal'>('ethereum');
   const [manualAddress, setManualAddress] = useState('');
@@ -69,6 +77,14 @@ export default function ProfileCreation({ onSave, onSignOut, connectedWalletAddr
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [isDraftHydrated, setIsDraftHydrated] = useState(false);
+  const [pendingAvatarFile, setPendingAvatarFile] = useState<File | null>(null);
+  const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
+    };
+  }, [avatarPreviewUrl]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -253,11 +269,71 @@ export default function ProfileCreation({ onSave, onSignOut, connectedWalletAddr
     setStep('chains');
   };
 
+  const handlePickAvatarFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    e.target.value = '';
+    if (!f) return;
+    if (!f.type.startsWith('image/')) {
+      setSaveError('Choose a JPEG, PNG, or WebP image.');
+      return;
+    }
+    if (f.size > 12 * 1024 * 1024) {
+      setSaveError('Image is too large (try under 12 MB).');
+      return;
+    }
+    setSaveError(null);
+    setAvatarPreviewUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return URL.createObjectURL(f);
+    });
+    setPendingAvatarFile(f);
+  };
+
+  const clearPendingAvatarFile = () => {
+    setPendingAvatarFile(null);
+    setAvatarPreviewUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
+  };
+
   const handleFinalSave = async () => {
+    const name = profile.displayName?.trim() ?? '';
+    if (name.length > 80) {
+      setSaveError('Display name must be 80 characters or fewer.');
+      return;
+    }
+    const pic = profile.avatarUrl?.trim() ?? '';
+    if (!pendingAvatarFile && pic) {
+      try {
+        const u = new URL(pic);
+        if (u.protocol !== 'https:') {
+          setSaveError('Profile image must use an https link (or leave it blank).');
+          return;
+        }
+      } catch {
+        setSaveError('Profile image must be a valid https URL (or leave it blank).');
+        return;
+      }
+    }
     setIsSaving(true);
     setSaveError(null);
     try {
-      await onSave(profile);
+      let working: UserProfile = { ...profile };
+
+      if (pendingAvatarFile) {
+        const blob = await resizeProfileAvatarFile(pendingAvatarFile, 400);
+        if (!working.id) {
+          const { id: _omit, ...rest } = working;
+          const { id: newId } = await createProfile(rest);
+          working = { ...working, id: newId };
+        }
+        const { avatarUrl } = await uploadProfileAvatar(working.id!, blob);
+        working = { ...working, avatarUrl };
+        clearPendingAvatarFile();
+      }
+
+      await onSave(working);
       if (typeof window !== 'undefined') {
         window.localStorage.removeItem(draftStorageKey);
       }
@@ -301,6 +377,61 @@ export default function ProfileCreation({ onSave, onSignOut, connectedWalletAddr
           <div className="text-center mb-6">
             <h1 className="piri-heading text-2xl font-black mb-1">Your flavors</h1>
             <p className="text-sm piri-muted font-semibold">add crypto wallets and fiat apps — Piri supports them all</p>
+          </div>
+          <div className="rounded-xl border-2 border-piri/15 bg-white/70 p-4 mb-6 text-left shadow-sm">
+            <h2 className="text-xs font-bold piri-muted uppercase tracking-wider mb-3">how you appear on your tip page</h2>
+            <label htmlFor="piri-display-name" className="block text-xs font-bold piri-muted mb-1">name or organization</label>
+            <input
+              id="piri-display-name"
+              type="text"
+              maxLength={80}
+              value={profile.displayName ?? ''}
+              onChange={(e) => setProfile((p) => ({ ...p, displayName: e.target.value }))}
+              placeholder="e.g. Alex Chen · Studio North"
+              className="w-full px-3 py-2 rounded-lg border-2 border-piri/20 focus:outline-none focus:ring-2 focus:ring-piri text-piri text-sm font-semibold placeholder-piri-muted"
+            />
+            <label htmlFor="piri-avatar-url" className="block text-xs font-bold piri-muted mb-1 mt-3">profile image</label>
+            <input
+              id="piri-avatar-url"
+              type="url"
+              inputMode="url"
+              value={profile.avatarUrl ?? ''}
+              onChange={(e) => setProfile((p) => ({ ...p, avatarUrl: e.target.value }))}
+              placeholder="https://… (square photos work best)"
+              className="w-full px-3 py-2 rounded-lg border-2 border-piri/20 focus:outline-none focus:ring-2 focus:ring-piri text-piri text-sm font-semibold placeholder-piri-muted"
+            />
+            <p className="text-xs piri-muted mt-2">optional — paste an <strong>https</strong> link, or upload a photo (we resize to max 400×400)</p>
+            <div className="mt-3 pt-3 border-t border-piri/15">
+              <span className="block text-xs font-bold piri-muted mb-2">upload</span>
+              <label className="flex cursor-pointer items-center gap-2 rounded-lg border-2 border-dashed border-piri/25 bg-white/80 px-3 py-2 text-sm font-semibold text-piri hover:border-piri/40">
+                <ImagePlus className="w-4 h-4 shrink-0" />
+                <span>choose image…</span>
+                <input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={handlePickAvatarFile} />
+              </label>
+              {(avatarPreviewUrl || profile.avatarUrl?.trim()) && (
+                <div className="mt-3 flex flex-wrap items-center gap-3">
+                  <img
+                    src={avatarPreviewUrl || profile.avatarUrl}
+                    alt=""
+                    className="h-16 w-16 rounded-full border-2 border-piri/20 object-cover"
+                  />
+                  {pendingAvatarFile && (
+                    <button type="button" onClick={clearPendingAvatarFile} className="text-xs font-semibold text-red-600 hover:underline">
+                      cancel upload
+                    </button>
+                  )}
+                  {profile.avatarUrl?.trim() && !pendingAvatarFile && (
+                    <button
+                      type="button"
+                      onClick={() => setProfile((p) => ({ ...p, avatarUrl: '' }))}
+                      className="text-xs font-semibold piri-muted hover:text-piri hover:underline"
+                    >
+                      remove photo from tip page
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
           <div className="space-y-4">
             {(['ethereum', 'base', 'bitcoin', 'solana', 'cashapp', 'venmo', 'zelle', 'paypal'] as const).map((chain) => {

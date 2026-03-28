@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Copy, Check, ArrowLeft, Wallet, ExternalLink } from 'lucide-react';
 import EthereumTip from './EthereumTip';
 import BaseTip from './BaseTip';
@@ -9,6 +9,52 @@ import { UserProfile } from './ProfileCreation';
 type Chain = 'ethereum' | 'base' | 'bitcoin' | 'solana';
 type PaymentMethod = Chain | 'cashapp' | 'venmo' | 'zelle' | 'paypal';
 type View = 'menu' | 'detail' | 'pay';
+
+function payeeInitials(displayName: string): string {
+  const t = displayName.trim();
+  if (!t) return '?';
+  const parts = t.split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) return (parts[0]![0]! + parts[1]![0]!).toUpperCase();
+  return t.slice(0, 2).toUpperCase();
+}
+
+function TipPayeeHeader({ profile }: { profile: UserProfile }) {
+  const displayName = profile.displayName?.trim() ?? '';
+  const avatarUrl = profile.avatarUrl?.trim() ?? '';
+  const [imgFailed, setImgFailed] = useState(false);
+  useEffect(() => {
+    setImgFailed(false);
+  }, [avatarUrl]);
+  const showAvatar = Boolean(avatarUrl) && !imgFailed;
+  const title = displayName || 'Send a payment';
+
+  return (
+    <div className="text-center mb-10">
+      <div className="flex justify-center mb-4">
+        {showAvatar ? (
+          <img
+            src={avatarUrl}
+            alt=""
+            width={80}
+            height={80}
+            className="w-20 h-20 rounded-full object-cover border-2 border-piri-cashapp shadow-lg bg-piri-cream"
+            onError={() => setImgFailed(true)}
+          />
+        ) : (
+          <div
+            className="w-20 h-20 rounded-full border-2 border-piri-cashapp bg-piri-cream flex items-center justify-center shadow-lg piri-heading text-2xl font-black text-piri"
+            aria-hidden
+          >
+            {payeeInitials(displayName)}
+          </div>
+        )}
+      </div>
+      <h1 className="piri-heading text-3xl sm:text-4xl font-black mb-2">{title}</h1>
+      <p className="text-xl font-bold text-piri">choose a payment method</p>
+      <p className="text-xs font-semibold piri-muted mt-2">Powered by Piri</p>
+    </div>
+  );
+}
 
 // original piri flavor palette for tiles/cards; no flavor names on labels
 interface ChainOption {
@@ -49,6 +95,8 @@ export default function TipPage({ profile }: { profile: UserProfile }) {
   const venmoUsername = profile.venmoUsername?.trim() ? profile.venmoUsername : null;
   const zelleContact = profile.zelleContact?.trim() ? profile.zelleContact : null;
   const paypalUsername = profile.paypalUsername?.trim() ? profile.paypalUsername : null;
+
+  const hasPayeePersona = Boolean(profile.displayName?.trim() || profile.avatarUrl?.trim());
 
   const copyAddress = (address: string) => {
     navigator.clipboard.writeText(address);
@@ -348,33 +396,35 @@ export default function TipPage({ profile }: { profile: UserProfile }) {
   return (
     <div className="piri-page">
       <div className="max-w-lg mx-auto px-4 py-12">
-        <div className="text-center mb-10">
-          <div className="flex justify-center mb-4">
-            <div className="w-20 h-20 rounded-2xl flex items-center justify-center overflow-hidden border-2 border-piri-cashapp bg-piri-cream shadow-lg">
-              <img
-                src="/logo/piri.png"
-                alt="Piri"
-                className="w-full h-full object-cover object-top"
-                onError={(e) => {
-                  const img = e.target as HTMLImageElement;
-                  if (img.dataset.fallbackUsed === '1') {
-                    img.style.display = 'none';
-                    const next = img.nextElementSibling;
-                    if (next) (next as HTMLElement).classList.remove('hidden');
-                  } else {
-                    img.dataset.fallbackUsed = '1';
-                    img.src = '/logo/piri-heart.png';
-                  }
-                }}
-              />
-              <span className="hidden piri-heading text-4xl font-black text-piri-cashapp" aria-hidden>P</span>
+        {hasPayeePersona ? (
+          <TipPayeeHeader profile={profile} />
+        ) : (
+          <div className="text-center mb-10">
+            <div className="flex justify-center mb-4">
+              <div className="w-20 h-20 rounded-2xl flex items-center justify-center overflow-hidden border-2 border-piri-cashapp bg-piri-cream shadow-lg">
+                <img
+                  src="/logo/piri.png"
+                  alt="Piri"
+                  className="w-full h-full object-cover object-top"
+                  onError={(e) => {
+                    const img = e.target as HTMLImageElement;
+                    if (img.dataset.fallbackUsed === '1') {
+                      img.style.display = 'none';
+                      const next = img.nextElementSibling;
+                      if (next) (next as HTMLElement).classList.remove('hidden');
+                    } else {
+                      img.dataset.fallbackUsed = '1';
+                      img.src = '/logo/piri-heart.png';
+                    }
+                  }}
+                />
+                <span className="hidden piri-heading text-4xl font-black text-piri-cashapp" aria-hidden>P</span>
+              </div>
             </div>
+            <h1 className="piri-heading text-4xl font-black mb-3">Piri</h1>
+            <p className="text-xl font-bold text-piri">choose a payment method</p>
           </div>
-          <h1 className="piri-heading text-4xl font-black mb-3">Piri</h1>
-          <p className="text-xl font-bold text-piri">choose a payment method</p>
-          <p className="text-sm font-semibold piri-muted mt-3">
-          </p>
-        </div>
+        )}
 
         {chains.length === 0 && !cashtag && !venmoUsername && !zelleContact && !paypalUsername ? (
           <div className="text-center py-12 rounded-2xl border-2 border-piri bg-white/50 p-8">
