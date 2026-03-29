@@ -27,8 +27,6 @@ export async function GET() {
     });
   }
 
-  const isServiceRole = supabaseKey?.startsWith('eyJ') && supabaseKey.length > 200;
-
   const testNonce = generateSiweNonce();
   const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
 

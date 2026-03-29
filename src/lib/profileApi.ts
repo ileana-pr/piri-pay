@@ -94,31 +94,6 @@ export async function fetchProfileBySession(): Promise<UserProfile | null> {
   };
 }
 
-/** fetch profile by ethereum address (for returning wallet users) */
-export async function fetchProfileByAddress(address: string): Promise<UserProfile | null> {
-  const res = await fetch(`${API}?address=${encodeURIComponent(address)}`);
-  if (res.status === 404) return null;
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: res.statusText }));
-    logClientError('fetchProfileByAddress', res.status, err);
-    throw new Error(profileHttpUserMessage(res.status));
-  }
-  const data = await res.json();
-  return {
-    id: data.id,
-    ethereumAddress: data.ethereumAddress ?? '',
-    baseAddress: data.baseAddress,
-    bitcoinAddress: data.bitcoinAddress,
-    solanaAddress: data.solanaAddress ?? '',
-    cashAppCashtag: data.cashAppCashtag,
-    venmoUsername: data.venmoUsername,
-    zelleContact: data.zelleContact,
-    paypalUsername: data.paypalUsername,
-    displayName: data.displayName,
-    avatarUrl: data.avatarUrl,
-  };
-}
-
 /** fetch profile by id (for tip page) */
 export async function fetchProfile(id: string): Promise<UserProfile> {
   const res = await fetch(`${API}/${id}`);

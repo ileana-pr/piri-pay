@@ -97,7 +97,7 @@ Optional. Add a `.env` in the project root (leave blank if you don’t need them
 VITE_ETH_ADDRESS=
 VITE_SOL_ADDRESS=
 VITE_BTC_ADDRESS=
-VITE_SOLANA_ENDPOINT=https://api.devnet.solana.com
+VITE_SOLANA_ENDPOINT=  # required — Helius or other RPC (see .env.example)
 VITE_WALLETCONNECT_PROJECT_ID=
 VITE_CASHAPP_HANDLE=
 VITE_VENMO_HANDLE=

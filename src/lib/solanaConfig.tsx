@@ -2,11 +2,9 @@ import React from 'react';
 import type { ConnectionConfig } from '@solana/web3.js';
 import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react';
 import { solanaBrowserFetch } from './solanaBrowserFetch';
+import { getSolanaRpcEndpoint } from './solanaEndpoint';
 
-// read endpoint from env. public rpcs vary on cors; solanaBrowserFetch strips solana-client and uses text/plain to avoid json preflight kills.
-// still set VITE_SOLANA_ENDPOINT to helius/quicknode in production for reliability and rate limits.
-const endpoint =
-  import.meta.env.VITE_SOLANA_ENDPOINT || 'https://solana.leorpc.com/?api_key=FREE';
+const endpoint = getSolanaRpcEndpoint();
 
 const connectionConfig: ConnectionConfig = {
   commitment: 'confirmed',

@@ -6,6 +6,7 @@ import { ArrowLeft, CheckCircle2, Loader2, AlertCircle, XCircle } from 'lucide-r
 import { POPULAR_TOKENS, TokenConfig } from '../lib/popularTokens';
 import ChainLogo from './ChainLogo';
 import { logClientError, solanaNetworkUserMessage } from '../lib/userFacingErrors';
+import { getSolanaRpcEndpoint } from '../lib/solanaEndpoint';
 
 interface SolanaTipProps {
   onBack: () => void;
@@ -41,10 +42,8 @@ export default function SolanaTip({ onBack, receivingAddress }: SolanaTipProps) 
   }, []);
   const { connection } = useConnection();
 
-  // must match solanaConfig default
-  const defaultEndpoint = 'https://solana.leorpc.com/?api_key=FREE';
   const solanaNetwork = useMemo(() => {
-    const endpoint = import.meta.env.VITE_SOLANA_ENDPOINT || defaultEndpoint;
+    const endpoint = getSolanaRpcEndpoint();
     if (endpoint.includes('devnet')) return 'Devnet (Testnet)';
     if (endpoint.includes('testnet')) return 'Testnet';
     return 'Mainnet';
@@ -53,7 +52,7 @@ export default function SolanaTip({ onBack, receivingAddress }: SolanaTipProps) 
   // Generate explorer URL
   const explorerUrl = useMemo(() => {
     if (!solHash) return null;
-    const endpoint = import.meta.env.VITE_SOLANA_ENDPOINT || defaultEndpoint;
+    const endpoint = getSolanaRpcEndpoint();
     if (endpoint.includes('devnet')) {
       return `https://explorer.solana.com/tx/${solHash}?cluster=devnet`;
     }

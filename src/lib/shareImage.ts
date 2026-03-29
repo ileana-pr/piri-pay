@@ -98,7 +98,7 @@ function fitCenteredTitle(ctx: CanvasRenderingContext2D, text: string, maxWidth:
   return t + ell;
 }
 
-export type ShareImageBranding = {
+type ShareImageBranding = {
   displayName?: string;
   avatarUrl?: string;
 };
@@ -133,8 +133,6 @@ export const SHARE_IMAGE_PRESETS = [
   { id: '768', size: 768, label: '768 × 768', hint: 'balanced' },
   { id: '512', size: 512, label: '512 × 512', hint: 'smallest file' },
 ] as const;
-
-export type ShareImagePresetId = (typeof SHARE_IMAGE_PRESETS)[number]['id'];
 
 function scale(size: number, n: number) {
   return Math.max(1, Math.round((n * size) / BASE));
@@ -376,23 +374,4 @@ export function downloadShareBlob(blob: Blob, filename: string) {
   a.download = filename;
   a.click();
   URL.revokeObjectURL(url);
-}
-
-/** one-click: walk presets until jpeg under 1mb, else download smallest jpeg anyway */
-export async function downloadPiriShareImage(
-  tipUrl: string,
-  theme: ShareImageTheme = 'light',
-  branding?: ShareImageBranding
-) {
-  for (let i = 0; i < SHARE_IMAGE_PRESETS.length; i++) {
-    const { size } = SHARE_IMAGE_PRESETS[i];
-    const exp = await prepareShareImageExport(tipUrl, size, theme, branding);
-    if (!exp.jpeg.overRecommendedMax) {
-      downloadShareBlob(exp.jpeg.blob, exp.jpeg.filename);
-      return;
-    }
-  }
-  const smallest = SHARE_IMAGE_PRESETS[SHARE_IMAGE_PRESETS.length - 1];
-  const exp = await prepareShareImageExport(tipUrl, smallest.size, theme, branding);
-  downloadShareBlob(exp.jpeg.blob, exp.jpeg.filename);
 }
