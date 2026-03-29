@@ -303,19 +303,6 @@ export default function ProfileCreation({ onSave, onSignOut, connectedWalletAddr
       setSaveError('Display name must be 80 characters or fewer.');
       return;
     }
-    const pic = profile.avatarUrl?.trim() ?? '';
-    if (!pendingAvatarFile && pic) {
-      try {
-        const u = new URL(pic);
-        if (u.protocol !== 'https:') {
-          setSaveError('Profile image must use an https link (or leave it blank).');
-          return;
-        }
-      } catch {
-        setSaveError('Profile image must be a valid https URL (or leave it blank).');
-        return;
-      }
-    }
     setIsSaving(true);
     setSaveError(null);
     try {
@@ -324,7 +311,8 @@ export default function ProfileCreation({ onSave, onSignOut, connectedWalletAddr
       if (pendingAvatarFile) {
         const blob = await resizeProfileAvatarFile(pendingAvatarFile, 400);
         if (!working.id) {
-          const { id: _omit, ...rest } = working;
+          const { id: _, ...rest } = working;
+          void _;
           const { id: newId } = await createProfile(rest);
           working = { ...working, id: newId };
         }
@@ -390,19 +378,9 @@ export default function ProfileCreation({ onSave, onSignOut, connectedWalletAddr
               placeholder="e.g. Alex Chen · Studio North"
               className="w-full px-3 py-2 rounded-lg border-2 border-piri/20 focus:outline-none focus:ring-2 focus:ring-piri text-piri text-sm font-semibold placeholder-piri-muted"
             />
-            <label htmlFor="piri-avatar-url" className="block text-xs font-bold piri-muted mb-1 mt-3">profile image</label>
-            <input
-              id="piri-avatar-url"
-              type="url"
-              inputMode="url"
-              value={profile.avatarUrl ?? ''}
-              onChange={(e) => setProfile((p) => ({ ...p, avatarUrl: e.target.value }))}
-              placeholder="https://… (square photos work best)"
-              className="w-full px-3 py-2 rounded-lg border-2 border-piri/20 focus:outline-none focus:ring-2 focus:ring-piri text-piri text-sm font-semibold placeholder-piri-muted"
-            />
-            <p className="text-xs piri-muted mt-2">optional — paste an <strong>https</strong> link, or upload a photo (we resize to max 400×400)</p>
-            <div className="mt-3 pt-3 border-t border-piri/15">
-              <span className="block text-xs font-bold piri-muted mb-2">upload</span>
+            <label className="block text-xs font-bold piri-muted mb-1 mt-3">profile photo (optional)</label>
+            <p className="text-xs piri-muted mb-2">upload an image — we resize to max 400×400 for your tip page and QR art</p>
+            <div>
               <label className="flex cursor-pointer items-center gap-2 rounded-lg border-2 border-dashed border-piri/25 bg-white/80 px-3 py-2 text-sm font-semibold text-piri hover:border-piri/40">
                 <ImagePlus className="w-4 h-4 shrink-0" />
                 <span>choose image…</span>

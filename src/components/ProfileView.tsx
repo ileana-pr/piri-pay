@@ -64,7 +64,10 @@ export default function ProfileView({ profile, onBack, onEdit, onSignOut }: Prof
     setShareError(null);
     setShareLoadingDimension(dimension);
     try {
-      const data = await prepareShareImageExport(tipUrl, dimension, theme);
+      const data = await prepareShareImageExport(tipUrl, dimension, theme, {
+        displayName: profile.displayName,
+        avatarUrl: profile.avatarUrl,
+      });
       setShareExport(data);
       previewUrlRef.current = URL.createObjectURL(data.png.blob);
     } catch (e) {
