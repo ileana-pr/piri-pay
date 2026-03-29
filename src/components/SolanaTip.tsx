@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { PublicKey, SystemProgram, Transaction, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { getAssociatedTokenAddress, createTransferInstruction } from '@solana/spl-token';
@@ -25,6 +25,8 @@ export default function SolanaTip({ onBack, receivingAddress }: SolanaTipProps) 
 
   // Solana wallet hooks
   const { publicKey: solAddress, connected: isSolConnected, connect: connectSol, disconnect: disconnectSol, wallet, wallets, select } = useWallet();
+  const connectSolRef = useRef(connectSol);
+  connectSolRef.current = connectSol;
 
   // detect mobile so we only show the single "Mobile Wallet Adapter" option
   useEffect(() => {
@@ -183,12 +185,11 @@ export default function SolanaTip({ onBack, receivingAddress }: SolanaTipProps) 
 
   const handleConnectWallet = (walletName: string) => {
     const selectedWallet = wallets.find(w => w.adapter.name === walletName);
-    if (selectedWallet) {
-      select(selectedWallet.adapter.name);
-      setTimeout(() => {
-        connectSol();
-      }, 100);
-    }
+    if (!selectedWallet) return;
+    select(selectedWallet.adapter.name);
+    setTimeout(() => {
+      void connectSolRef.current().catch((e: unknown) => logClientError('SolanaTip connect', e));
+    }, 0);
   };
 
   const handleDisconnectSol = useCallback(async () => {
@@ -444,24 +445,28 @@ export default function SolanaTip({ onBack, receivingAddress }: SolanaTipProps) 
 
               {/* Error messages */}
               {transactionCancelled && (
-                <div className="flex flex-col gap-4 p-6 bg-amber-500/10 border border-amber-500/40 rounded-2xl">
+                <div className="flex flex-col gap-4 p-6 rounded-2xl border-2 border-amber-500/50 bg-piri-bg shadow-sm">
                   <div className="flex items-start gap-3">
-                    <XCircle className="w-6 h-6 text-amber-500 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-semibold text-amber-700 dark:text-amber-400">Transaction cancelled</p>
-                      <p className="text-sm text-amber-600/90 dark:text-amber-300/80 mt-1">No worries — your funds are safe. You can try again whenever you&apos;re ready.</p>
+                    <XCircle className="w-6 h-6 flex-shrink-0 mt-0.5 text-amber-600" aria-hidden />
+                    <div className="min-w-0">
+                      <p className="font-bold text-piri text-lg leading-tight">Transaction cancelled</p>
+                      <p className="text-sm font-semibold text-piri-muted mt-2 leading-relaxed">
+                        No worries — your funds are safe. You can try again whenever you&apos;re ready.
+                      </p>
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-3">
                     <button
+                      type="button"
                       onClick={handleStartOver}
                       className="px-4 py-2 bg-piri text-white font-semibold rounded-xl hover:opacity-90 transition-opacity"
                     >
                       Start over
                     </button>
                     <button
+                      type="button"
                       onClick={onBack}
-                      className="px-4 py-2 bg-slate-600 hover:bg-slate-500 text-white font-semibold rounded-xl transition-colors"
+                      className="px-4 py-2 rounded-xl font-semibold border-2 border-piri text-piri bg-white/90 hover:bg-white transition-colors"
                     >
                       Go back
                     </button>

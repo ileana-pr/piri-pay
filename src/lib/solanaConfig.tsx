@@ -3,8 +3,8 @@ import type { ConnectionConfig } from '@solana/web3.js';
 import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react';
 import { solanaBrowserFetch } from './solanaBrowserFetch';
 
-// read endpoint from env. ankr/drpc free tiers often block chain methods; leo FREE works if cors allows minimal headers (we strip solana-client in browser).
-// use helius/quicknode in production (set VITE_SOLANA_ENDPOINT).
+// read endpoint from env. public rpcs vary on cors; solanaBrowserFetch strips solana-client and uses text/plain to avoid json preflight kills.
+// still set VITE_SOLANA_ENDPOINT to helius/quicknode in production for reliability and rate limits.
 const endpoint =
   import.meta.env.VITE_SOLANA_ENDPOINT || 'https://solana.leorpc.com/?api_key=FREE';
 
