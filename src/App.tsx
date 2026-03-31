@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import { useAccount, useDisconnect, useSignMessage, useChainId } from 'wagmi';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WagmiProvider } from 'wagmi';
-import { RainbowKitProvider } from '@rainbow-me/rainbowkit';
+import { darkTheme, lightTheme, RainbowKitProvider } from '@rainbow-me/rainbowkit';
 import '@rainbow-me/rainbowkit/styles.css';
+import { useTheme } from './lib/useTheme';
+import ThemeToggle from './components/ThemeToggle';
 import { config as rainbowConfig } from './lib/web3Config';
 import { SolanaWalletProvider } from './lib/solanaConfig.tsx';
 import TipPageLoader from './components/TipPageLoader';
@@ -20,6 +22,26 @@ import { signInWithSiwe } from './lib/siweAuth';
 import { supabase } from './lib/supabase';
 
 const queryClient = new QueryClient();
+
+function RainbowKitThemed({ children }: { children: ReactNode }) {
+  const { effectiveDark } = useTheme();
+  return (
+    <RainbowKitProvider theme={effectiveDark ? darkTheme() : lightTheme()} coolMode={false}>
+      {children}
+    </RainbowKitProvider>
+  );
+}
+
+function LayoutWithThemeToggle({ children }: { children: ReactNode }) {
+  return (
+    <>
+      {children}
+      <div className="fixed bottom-4 right-4 z-[100]">
+        <ThemeToggle />
+      </div>
+    </>
+  );
+}
 
 // secret brand page — no links from main site; access via /x-piri-brand
 const BRAND_PATH = '/x-piri-brand';
@@ -249,13 +271,25 @@ function App() {
   const path = window.location.pathname;
 
   if (path === BRAND_PATH) {
-    return <BrandPage />;
+    return (
+      <LayoutWithThemeToggle>
+        <BrandPage />
+      </LayoutWithThemeToggle>
+    );
   }
   if (path === GETTING_STARTED_PATH) {
-    return <GettingStartedPage />;
+    return (
+      <LayoutWithThemeToggle>
+        <GettingStartedPage />
+      </LayoutWithThemeToggle>
+    );
   }
   if (path === WHITEPAPER_PATH) {
-    return <WhitepaperPage />;
+    return (
+      <LayoutWithThemeToggle>
+        <WhitepaperPage />
+      </LayoutWithThemeToggle>
+    );
   }
 
   const appContent = path.startsWith('/tip/') ? (
@@ -265,15 +299,17 @@ function App() {
   );
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <WagmiProvider config={rainbowConfig}>
-        <RainbowKitProvider coolMode={false}>
-          <SolanaWalletProvider>
-            {appContent}
-          </SolanaWalletProvider>
-        </RainbowKitProvider>
-      </WagmiProvider>
-    </QueryClientProvider>
+    <LayoutWithThemeToggle>
+      <QueryClientProvider client={queryClient}>
+        <WagmiProvider config={rainbowConfig}>
+          <RainbowKitThemed>
+            <SolanaWalletProvider>
+              {appContent}
+            </SolanaWalletProvider>
+          </RainbowKitThemed>
+        </WagmiProvider>
+      </QueryClientProvider>
+    </LayoutWithThemeToggle>
   );
 }
 

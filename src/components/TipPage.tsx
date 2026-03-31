@@ -434,7 +434,7 @@ export default function TipPage({ profile }: { profile: UserProfile }) {
         )}
 
         {chains.length === 0 && !cashtag && !venmoUsername && !zelleContact && !paypalUsername ? (
-          <div className="text-center py-12 rounded-2xl border-2 border-piri bg-white/50 p-8">
+          <div className="text-center py-12 rounded-2xl border-2 border-piri bg-piri-surface p-8">
             <p className="text-2xl mb-2">🍧</p>
             <p className="font-bold text-piri">Piri says: no payment methods set up yet</p>
             <p className="text-sm piri-muted mt-1">Whoever shared this link can add ways to get paid in their Piri profile</p>

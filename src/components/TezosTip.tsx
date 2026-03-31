@@ -101,7 +101,7 @@ export default function TezosTip({ onBack, receivingAddress }: TezosTipProps) {
         setError(
           msg.includes('balance') || msg.includes('Funds')
             ? 'Not enough XTZ for this amount (and fees).'
-            : 'Something went wrong sending XTZ. Check your wallet and RPC, then try again.'
+            : 'Cancelled in wallet — your funds are safe. Try again when ready.'
         );
       }
     } finally {
@@ -110,6 +110,7 @@ export default function TezosTip({ onBack, receivingAddress }: TezosTipProps) {
   }, [amount, tezos, pkh, payeeOk, receivingAddress]);
 
   const explorerUrl = opHash ? `https://tzkt.io/${opHash}` : null;
+  const quickAmounts = ['0.1', '0.5', '1', '5', '10'];
 
   if (!rpc) {
     return (
@@ -118,7 +119,7 @@ export default function TezosTip({ onBack, receivingAddress }: TezosTipProps) {
           <button type="button" onClick={onBack} className="mb-8 flex items-center gap-2 font-semibold text-piri hover:opacity-70">
             <ArrowLeft className="w-5 h-5" /> Back
           </button>
-          <div className="rounded-xl border-2 border-piri/20 bg-white p-6 shadow-sm">
+          <div className="rounded-xl border-2 border-piri/20 bg-piri-elevated p-6 shadow-sm">
             <p className="text-base font-bold text-piri">Tezos payments are temporarily unavailable.</p>
             <p className="text-sm font-semibold piri-muted mt-2">
               Please choose another payment method for now, or try again in a little bit.
@@ -174,98 +175,119 @@ export default function TezosTip({ onBack, receivingAddress }: TezosTipProps) {
 
   return (
     <div className="piri-page">
-      <div className="max-w-lg mx-auto px-4 py-12">
-        <button type="button" onClick={onBack} className="mb-8 flex items-center gap-2 font-semibold text-piri hover:opacity-70">
+      <div className="max-w-2xl mx-auto px-4 py-12">
+        <button type="button" onClick={onBack} className="mb-8 flex items-center gap-2 font-semibold text-piri transition-opacity hover:opacity-70">
           <ArrowLeft className="w-5 h-5" /> Back
         </button>
 
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 rounded-2xl border-2 border-piri-tezos bg-piri-tezos/20 flex items-center justify-center mx-auto mb-4 shadow-sm">
-            <ChainLogo chain="tezos" size={36} />
-          </div>
-          <h1 className="piri-heading text-3xl font-black mb-2">Tezos</h1>
-          <p className="text-sm font-semibold piri-muted">XTZ on mainnet</p>
-        </div>
-
-        <div className="rounded-xl p-4 border-2 border-piri-tezos piri-card-tezos shadow-sm mb-6">
-          <p className="text-xs font-bold piri-muted uppercase mb-2">Pay to</p>
-          <code className="text-sm text-piri break-all font-semibold block">{receivingAddress.trim()}</code>
-          <button
-            type="button"
-            onClick={() => {
-              void navigator.clipboard.writeText(receivingAddress.trim());
-              setCopied(true);
-              setTimeout(() => setCopied(false), 2000);
-            }}
-            className="mt-3 w-full py-2 rounded-lg font-bold text-sm bg-piri-tezos text-white flex items-center justify-center gap-2"
-          >
-            {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-            {copied ? 'Copied' : 'Copy address'}
-          </button>
-          <p className="text-xs piri-muted mt-2">
-            If connect fails, send XTZ to this address from any Tezos wallet using <strong>Copy address</strong>.
-          </p>
-        </div>
-
-        {!connected ? (
-          <button
-            type="button"
-            onClick={() => void connectWallet()}
-            disabled={connecting}
-            className="w-full py-4 rounded-xl font-bold text-white bg-piri-tezos flex items-center justify-center gap-2 disabled:opacity-50"
-          >
-            {connecting ? <Loader2 className="w-5 h-5 animate-spin" /> : null}
-            Connect Beacon wallet
-          </button>
-        ) : (
-          <div className="space-y-4">
-            <div className="rounded-xl p-3 border border-piri/15 bg-white/60 text-xs">
-              <span className="piri-muted">From </span>
-              <code className="font-mono text-piri break-all">{pkh}</code>
+        <div className="rounded-3xl p-8 border-2 border-piri-tezos piri-card-tezos shadow-xl backdrop-blur-sm">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl border-2 border-piri-tezos bg-piri-tezos/20 mb-4 shadow-sm">
+              <ChainLogo chain="tezos" size={40} />
             </div>
-            <div>
-              <label htmlFor="tez-amt" className="block text-sm font-semibold text-piri mb-2">
-                Amount (XTZ)
-              </label>
-              <input
-                id="tez-amt"
-                type="number"
-                step="0.001"
-                min="0"
-                value={amount}
-                onChange={(e) => {
-                  setAmount(e.target.value);
-                  setError(null);
-                  setTxCancelled(false);
+            <h1 className="piri-heading text-3xl font-black mb-2">Tezos</h1>
+            <p className="text-sm font-semibold piri-muted">Your payment address is pre-filled automatically</p>
+          </div>
+
+          <div className="space-y-6">
+            <div className="rounded-xl p-4 bg-slate-900/50 border border-slate-700/50">
+              <p className="text-xs font-bold text-gray-400 uppercase mb-2">Pay to</p>
+              <code className="text-sm text-white break-all font-semibold block">{receivingAddress.trim()}</code>
+              <button
+                type="button"
+                onClick={() => {
+                  void navigator.clipboard.writeText(receivingAddress.trim());
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2000);
                 }}
-                disabled={sending}
-                className="w-full px-4 py-3 rounded-xl border-2 border-piri/25 text-lg font-bold text-piri"
-              />
+                className="mt-3 w-full py-2.5 rounded-lg font-bold text-sm bg-piri-tezos hover:opacity-90 text-white flex items-center justify-center gap-2 transition-opacity"
+              >
+                {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                {copied ? 'Copied' : 'Copy address'}
+              </button>
+              <p className="text-xs text-gray-300 mt-2">
+                If connect fails, send XTZ to this address from any Tezos wallet using <strong>Copy address</strong>.
+              </p>
             </div>
-            <button
-              type="button"
-              onClick={() => void handleSend()}
-              disabled={sending || !amount}
-              className="w-full py-4 rounded-xl font-bold text-white bg-piri-tezos flex items-center justify-center gap-2 disabled:opacity-50"
-            >
-              {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : null}
-              Send tip
-            </button>
-          </div>
-        )}
 
-        {txCancelled && (
-          <div className="mt-4 flex gap-3 p-4 rounded-xl border-2 border-amber-400 bg-amber-50">
-            <XCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-            <p className="text-sm text-amber-900">Cancelled in wallet — your funds are safe. Try again when ready.</p>
+            {!connected ? (
+              <button
+                type="button"
+                onClick={() => void connectWallet()}
+                disabled={connecting}
+                className="w-full py-4 rounded-xl font-bold text-white bg-piri-tezos hover:opacity-90 flex items-center justify-center gap-2 transition-opacity disabled:opacity-50"
+              >
+                {connecting ? <Loader2 className="w-5 h-5 animate-spin" /> : null}
+                Connect to send
+              </button>
+            ) : (
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="tez-amt" className="block text-sm font-semibold text-gray-300 mb-2">
+                    Enter Amount (XTZ)
+                  </label>
+                  <input
+                    id="tez-amt"
+                    type="number"
+                    step="0.001"
+                    min="0"
+                    value={amount}
+                    onChange={(e) => {
+                      setAmount(e.target.value);
+                      setError(null);
+                      setTxCancelled(false);
+                    }}
+                    disabled={sending}
+                    placeholder="0.00"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-700/50 bg-slate-900/50 text-lg font-bold text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-piri-tezos"
+                  />
+                </div>
+                <div>
+                  <p className="text-sm mb-3 text-gray-400">Quick amounts</p>
+                  <div className="grid grid-cols-5 gap-2">
+                    {quickAmounts.map((amt) => (
+                      <button
+                        key={amt}
+                        type="button"
+                        onClick={() => {
+                          setAmount(amt);
+                          setError(null);
+                          setTxCancelled(false);
+                        }}
+                        disabled={sending}
+                        className="py-2 px-3 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 border border-slate-700/50 bg-slate-900/50 hover:bg-slate-800 text-white"
+                      >
+                        {amt}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => void handleSend()}
+                  disabled={sending || !amount}
+                  className="w-full py-4 rounded-xl font-bold text-white bg-piri-tezos hover:opacity-90 flex items-center justify-center gap-2 transition-opacity disabled:opacity-50"
+                >
+                  {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : null}
+                  Send Tip
+                </button>
+              </div>
+            )}
+
+            {txCancelled && (
+              <div className="flex gap-3 p-4 rounded-xl border-2 border-amber-400 bg-amber-50">
+                <XCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                <p className="text-sm text-amber-900">Cancelled in wallet — your funds are safe. Try again when ready.</p>
+              </div>
+            )}
+            {error && (
+              <div className="flex gap-2 p-4 rounded-xl border-2 border-red-300 bg-red-50 text-red-700">
+                <AlertCircle className="w-5 h-5 shrink-0" />
+                <p className="text-sm font-medium">{error}</p>
+              </div>
+            )}
           </div>
-        )}
-        {error && (
-          <div className="mt-4 flex gap-2 p-4 rounded-xl border-2 border-red-300 bg-red-50 text-red-700">
-            <AlertCircle className="w-5 h-5 shrink-0" />
-            <p className="text-sm font-medium">{error}</p>
-          </div>
-        )}
+        </div>
       </div>
     </div>
   );

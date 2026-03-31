@@ -1,14 +1,21 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: 'class',
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
       colors: {
         piri: {
-          DEFAULT: '#2D0A00',
-          muted: 'rgba(45, 10, 0, 0.6)',
-          bg: '#FFFBF2',
-          cream: '#FFF0D6',
+          DEFAULT: 'var(--piri-text)',
+          muted: 'var(--piri-text-muted)',
+          bg: 'var(--piri-bg)',
+          cream: 'var(--piri-cream)',
+          elevated: 'var(--piri-elevated)',
+          surface: 'var(--piri-surface)',
+          'surface-dim': 'var(--piri-surface-dim)',
+          border: 'var(--piri-border)',
+          ink: '#2D0A00',
+          fresa: '#FF6B9D',
           ethereum: '#FF6B9D',
           base: '#1D4ED8',
           venmo: '#0EA5E9',

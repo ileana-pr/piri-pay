@@ -6,10 +6,16 @@
 
 /* piri brand — piraguero-inspired payment app */
 :root {
+  color-scheme: light;
   /* core */
   --piri-bg: #FFFBF2;
   --piri-text: #2D0A00;
   --piri-text-muted: rgba(45, 10, 0, 0.6);
+  --piri-cream: #fff0d6;
+  --piri-elevated: #ffffff;
+  --piri-surface: rgba(255, 255, 255, 0.88);
+  --piri-surface-dim: rgba(255, 255, 255, 0.72);
+  --piri-border: rgba(45, 10, 0, 0.15);
   /* flavors = payment methods (brand-aligned, Piri twist) */
   --piri-ethereum: #FF6B9D;   /* pink (Fresa) */
   --piri-menta: #14B8A6;      /* turquoise (Menta / Link) */
@@ -24,6 +30,18 @@
   /* typography */
   --piri-font-display: 'Fredoka One', cursive;
   --piri-font-body: 'Nunito', sans-serif;
+}
+
+html.dark {
+  color-scheme: dark;
+  --piri-bg: #161311;
+  --piri-text: #faf6f0;
+  --piri-text-muted: rgba(250, 246, 240, 0.68);
+  --piri-cream: #1e1a16;
+  --piri-elevated: #221e1a;
+  --piri-surface: rgba(255, 255, 255, 0.09);
+  --piri-surface-dim: rgba(255, 255, 255, 0.06);
+  --piri-border: rgba(250, 246, 240, 0.14);
 }
 
 @layer base {

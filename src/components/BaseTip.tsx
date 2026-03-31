@@ -545,7 +545,7 @@ export default function BaseTip({ onBack, receivingAddress }: BaseTipProps) {
               )}
 
               {isEthConnected && !showWalletSelector && (
-                <div className="rounded-xl p-4 border-2 space-y-2 bg-white/85 border-piri-base/30">
+                <div className="rounded-xl p-4 border-2 space-y-2 bg-piri-surface border-piri-base/30">
                   <div>
                     <p className="text-sm mb-1" style={{ color: 'var(--piri-text)', opacity: 0.5 }}>Connected Wallet</p>
                     <p className="font-mono text-sm font-semibold text-[#2D0A00]">{ethAddress?.slice(0, 6)}...{ethAddress?.slice(-4)}</p>
@@ -612,7 +612,7 @@ export default function BaseTip({ onBack, receivingAddress }: BaseTipProps) {
                     </button>
                     <button
                       onClick={onBack}
-                      className="px-4 py-2 rounded-xl font-bold border-2 transition-colors bg-white/90 hover:bg-white"
+                      className="px-4 py-2 rounded-xl font-bold border-2 transition-colors bg-piri-surface hover:bg-piri-elevated"
                       style={{ borderColor: 'var(--piri-ethereum)', color: 'var(--piri-ethereum)' }}
                     >
                       Go back

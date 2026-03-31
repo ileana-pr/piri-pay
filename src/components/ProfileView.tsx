@@ -125,7 +125,7 @@ export default function ProfileView({ profile, onBack, onEdit, onSignOut }: Prof
               </p>
             )}
             {profile.id && qrDataUrl && (
-              <div className="p-6 bg-white rounded-2xl shadow-lg mb-6 border-2 border-piri">
+              <div className="p-6 bg-piri-elevated rounded-2xl shadow-lg mb-6 border-2 border-piri">
                 <img src={qrDataUrl} alt="Scan to pay with Piri" className="w-64 h-64" />
               </div>
             )}
@@ -158,7 +158,7 @@ export default function ProfileView({ profile, onBack, onEdit, onSignOut }: Prof
                     setSharePanelOpen(true);
                     setShareError(null);
                   }}
-                  className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-xl border-2 border-piri text-piri bg-white hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-xl border-2 border-piri text-piri bg-piri-elevated hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <Download className="w-4 h-4" /> Download image
                 </button>
@@ -173,7 +173,7 @@ export default function ProfileView({ profile, onBack, onEdit, onSignOut }: Prof
                 </button>
               )}
               {sharePanelOpen && (
-                <div className="w-full max-w-sm rounded-xl border-2 border-piri/20 bg-white/80 p-4 text-left">
+                <div className="w-full max-w-sm rounded-xl border-2 border-piri/20 bg-piri-surface p-4 text-left">
                   <div className="flex items-center justify-between mb-3">
                     <p className="text-xs font-bold piri-muted uppercase tracking-wider">image size</p>
                     <button
@@ -201,7 +201,7 @@ export default function ProfileView({ profile, onBack, onEdit, onSignOut }: Prof
                           setShareTheme('light');
                           if (shareExport) loadShareExportForDimension(shareExport.dimension, 'light');
                         }}
-                        className={`px-3 py-1.5 text-xs font-bold transition-colors ${shareTheme === 'light' ? 'bg-piri text-white' : 'bg-white text-piri hover:bg-piri/10'}`}
+                        className={`px-3 py-1.5 text-xs font-bold transition-colors ${shareTheme === 'light' ? 'bg-piri-ink text-white' : 'bg-piri-elevated text-piri hover:bg-piri/10'}`}
                       >
                         Light
                       </button>
@@ -211,7 +211,7 @@ export default function ProfileView({ profile, onBack, onEdit, onSignOut }: Prof
                           setShareTheme('dark');
                           if (shareExport) loadShareExportForDimension(shareExport.dimension, 'dark');
                         }}
-                        className={`px-3 py-1.5 text-xs font-bold transition-colors ${shareTheme === 'dark' ? 'bg-piri text-white' : 'bg-white text-piri hover:bg-piri/10'}`}
+                        className={`px-3 py-1.5 text-xs font-bold transition-colors ${shareTheme === 'dark' ? 'bg-piri-ink text-white' : 'bg-piri-elevated text-piri hover:bg-piri/10'}`}
                       >
                         Dark
                       </button>
@@ -231,7 +231,7 @@ export default function ProfileView({ profile, onBack, onEdit, onSignOut }: Prof
                           className={`flex items-center justify-between rounded-lg border-2 px-3 py-2 text-left transition-colors ${
                             selected
                               ? 'border-piri-cashapp bg-piri-cream/50'
-                              : 'border-piri/15 bg-white hover:border-piri/30'
+                              : 'border-piri/15 bg-piri-elevated hover:border-piri/30'
                           }`}
                         >
                           <span>

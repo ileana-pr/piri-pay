@@ -10,15 +10,8 @@ import {
 } from '../lib/addressFormats';
 import { createPublicClient, http } from 'viem';
 import { mainnet } from 'viem/chains';
-import { normalize } from 'viem/ens';
 import { ArrowLeft, Save, Loader2, Trash2, LogOut, Wallet, ImagePlus } from 'lucide-react';
 import ChainLogo from './ChainLogo';
-
-// public client for ENS resolution (reads only, no wallet needed)
-const ensClient = createPublicClient({
-  chain: mainnet,
-  transport: http(),
-});
 
 // simplified profile — payment addresses for receiving tips
 export interface UserProfile {
@@ -59,6 +52,11 @@ type Step = 'chains' | 'manual';
 const PROFILE_DRAFT_STORAGE_PREFIX = 'piri.profileCreationDraft';
 
 export default function ProfileCreation({ onSave, onSignOut, connectedWalletAddress, initialProfile }: ProfileCreationProps) {
+  const ensClient = useMemo(
+    () => createPublicClient({ chain: mainnet, transport: http() }),
+    [],
+  );
+
   const draftStorageKey = useMemo(
     () => `${PROFILE_DRAFT_STORAGE_PREFIX}:${initialProfile?.id ?? connectedWalletAddress ?? 'default'}`,
     [initialProfile?.id, connectedWalletAddress]
@@ -163,6 +161,7 @@ export default function ProfileCreation({ onSave, onSignOut, connectedWalletAddr
     setResolveError(null);
 
     try {
+      const { normalize } = await import('viem/ens');
       // .base and .base.eth: ENS subdomains on mainnet
       if (domain.endsWith('.base.eth') || domain.endsWith('.base') || domain.includes('.base')) {
         const name = domain.replace(/\.base\.eth$/i, '').replace(/\.base$/i, '').trim();
@@ -196,7 +195,7 @@ export default function ProfileCreation({ onSave, onSignOut, connectedWalletAddr
     } finally {
       setIsResolving(false);
     }
-  }, []);
+  }, [ensClient]);
 
   const handleSaveAddress = () => {
     const trimmed = manualAddress.trim();
@@ -383,7 +382,7 @@ export default function ProfileCreation({ onSave, onSignOut, connectedWalletAddr
             <h1 className="piri-heading text-2xl font-black mb-1">Your flavors</h1>
             <p className="text-sm piri-muted font-semibold">add crypto wallets and fiat apps — Piri supports them all</p>
           </div>
-          <div className="rounded-xl border-2 border-piri/15 bg-white/70 p-4 mb-6 text-left shadow-sm">
+          <div className="rounded-xl border-2 border-piri/15 bg-piri-surface-dim p-4 mb-6 text-left shadow-sm">
             <h2 className="text-xs font-bold piri-muted uppercase tracking-wider mb-3">how you appear on your tip page</h2>
             <label htmlFor="piri-display-name" className="block text-xs font-bold piri-muted mb-1">name or organization</label>
             <input
@@ -398,7 +397,7 @@ export default function ProfileCreation({ onSave, onSignOut, connectedWalletAddr
             <label className="block text-xs font-bold piri-muted mb-1 mt-3">profile photo (optional)</label>
             <p className="text-xs piri-muted mb-2">upload an image — we resize to max 400×400 for your tip page and QR art</p>
             <div>
-              <label className="flex cursor-pointer items-center gap-2 rounded-lg border-2 border-dashed border-piri/25 bg-white/80 px-3 py-2 text-sm font-semibold text-piri hover:border-piri/40">
+              <label className="flex cursor-pointer items-center gap-2 rounded-lg border-2 border-dashed border-piri/25 bg-piri-surface px-3 py-2 text-sm font-semibold text-piri hover:border-piri/40">
                 <ImagePlus className="w-4 h-4 shrink-0" />
                 <span>choose image…</span>
                 <input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={handlePickAvatarFile} />

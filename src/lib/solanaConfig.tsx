@@ -10,7 +10,7 @@ const connectionConfig: ConnectionConfig = {
 function SolanaConfigMissing() {
   return (
     <div className="min-h-screen flex items-center justify-center p-6 bg-piri-cream text-piri">
-      <div className="max-w-md rounded-2xl border-2 border-piri/20 bg-white p-8 shadow-lg">
+      <div className="max-w-md rounded-2xl border-2 border-piri/20 bg-piri-elevated p-8 shadow-lg">
         <h1 className="piri-heading text-xl font-black mb-3">solana rpc url</h1>
         <p className="text-sm text-piri-muted">
           set <code className="font-mono text-piri">VITE_SOLANA_ENDPOINT</code> to the exact https rpc url from your

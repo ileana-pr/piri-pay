@@ -105,7 +105,7 @@ export default function SignInPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={emailSent || !supabase}
-                className="min-w-0 flex-1 px-4 py-3 rounded-xl border-2 border-piri/30 bg-white font-medium placeholder:piri-muted focus:outline-none focus:border-piri disabled:opacity-60"
+                className="min-w-0 flex-1 px-4 py-3 rounded-xl border-2 border-piri/30 bg-piri-elevated font-medium placeholder:piri-muted focus:outline-none focus:border-piri disabled:opacity-60"
               />
               <button
                 type="button"
@@ -142,7 +142,7 @@ export default function SignInPage() {
               type="button"
               onClick={handleGoogleSignIn}
               disabled={!supabase || googleLoading}
-              className="w-full py-3 px-4 rounded-xl border-2 border-piri/30 bg-white hover:bg-piri/5 font-bold text-piri flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-full py-3 px-4 rounded-xl border-2 border-piri/30 bg-piri-elevated hover:bg-piri/5 font-bold text-piri flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {googleLoading ? 'Redirecting to Google...' : 'Continue with Google'}
               <ChevronRight className="w-5 h-5" />

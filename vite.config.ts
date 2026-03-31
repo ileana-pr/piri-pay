@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react';
 import { nodePolyfills } from 'vite-plugin-node-polyfills';
 
 // https://vitejs.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     nodePolyfills({
@@ -19,8 +19,9 @@ export default defineConfig({
     exclude: ['lucide-react'],
     include: ['@walletconnect/ethereum-provider'],
   },
+
   define: {
-    'process.env': {},
+    'process.env.NODE_ENV': JSON.stringify(mode === 'production' ? 'production' : 'development'),
   },
   base: '/',
   server: {
@@ -28,4 +29,4 @@ export default defineConfig({
     port: 5173,
     strictPort: false,
   },
-});
+}));

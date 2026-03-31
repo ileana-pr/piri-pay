@@ -15,6 +15,19 @@
   </head>
   <body>
     <div id="root"></div>
+    <!-- readable-stream (via walletconnect → create-hash → ripemd160) needs process.browser and a string process.version before deps load -->
+    <script>
+      (function () {
+        var p = globalThis.process;
+        if (!p) {
+          globalThis.process = { browser: true, version: '', env: {} };
+          return;
+        }
+        p.browser = true;
+        if (p.version == null || typeof p.version !== 'string') p.version = '';
+        if (!p.env) p.env = {};
+      })();
+    </script>
     <!-- optional: ?debug=1 in URL shows on-device console (no USB) -->
     <script>
       (function () {

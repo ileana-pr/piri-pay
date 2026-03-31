@@ -673,7 +673,7 @@ export default function EthereumTip({ onBack, receivingAddress }: EthereumTipPro
                     </button>
                     <button
                       onClick={onBack}
-                      className="px-4 py-2 rounded-xl font-bold border-2 transition-colors bg-white/90 hover:bg-white"
+                      className="px-4 py-2 rounded-xl font-bold border-2 transition-colors bg-piri-surface hover:bg-piri-elevated"
                       style={{ borderColor: 'var(--piri-ethereum)', color: 'var(--piri-ethereum)' }}
                     >
                       Go back

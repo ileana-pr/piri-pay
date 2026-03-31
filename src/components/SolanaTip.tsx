@@ -458,14 +458,14 @@ export default function SolanaTip({ onBack, receivingAddress }: SolanaTipProps) 
                     <button
                       type="button"
                       onClick={handleStartOver}
-                      className="px-4 py-2 bg-piri text-white font-semibold rounded-xl hover:opacity-90 transition-opacity"
+                      className="px-4 py-2 bg-piri-ink text-white font-semibold rounded-xl hover:opacity-90 transition-opacity"
                     >
                       Start over
                     </button>
                     <button
                       type="button"
                       onClick={onBack}
-                      className="px-4 py-2 rounded-xl font-semibold border-2 border-piri text-piri bg-white/90 hover:bg-white transition-colors"
+                      className="px-4 py-2 rounded-xl font-semibold border-2 border-piri text-piri bg-piri-surface hover:bg-piri-elevated transition-colors"
                     >
                       Go back
                     </button>
